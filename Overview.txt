@@ -1,0 +1,164 @@
+Mission Overview
+
+Robot is an autonomous agricultural platform designed to:
+
+1. Read an AprilTag (task configuration only)
+2. Enter a rectangular planter box
+3. Plant exactly 2 seeds with defined spacing
+4. Move into cabbage zone
+5. Detect cabbages with structured interval logic
+6. Stop safely at the end of the planter
+7. Report system status via ROS 2
+
+
+
+System Overview
+
+AprilTag Order Input
+        ↓
+Raspberry Pi 5 (ROS 2 Jazzy)
+  ├── Vision Node (AprilTag + Cabbage size detection)
+  ├── Core Logic Node (State machine)
+  ├── Movement Controller
+  ├── Dashboard Backend (FastAPI + rosbridge)
+  └── micro-ROS Agent
+        ↓
+  ESP32 #1 → Movement Control (Motors + Encoders)
+  ESP32 #2 → Planting Mechanism (Servo/Actuator)
+  
+
+Hardware Architecture
+
+Main Controller
+- Raspberry Pi 5
+- Ubuntu 24.04
+- ROS 2 Jazzy
+- Runs:
+	State machine
+	Vision processing
+	Dashboard backend
+	micro-ROS Agent
+
+Microcontrollers (via micro-ROS)
+-- ESP32 #1 – Movement Controller
+	- Differential drive system
+	- Wheel encoders
+	- Subscribes to /cmd_vel
+	- Publishes encoder ticks
+	- Executes low-level motor control
+-- ESP32 #2 – Planting Controller
+	- Controls:
+		Seed planting mechanism
+	- Possibly servo-based dropper
+	- Executes planting command from Pi
+
+
+Workspace Structure
+
+src/
+ ├── robot_bringup
+ ├── robot_core
+ ├── robot_vision
+ ├── robot_actuator
+ ├── robot_interfaces
+ └── robot_dashboard
+ 
+Package Responsibilities
+- robot_core
+	Central state machine
+	Planting logic
+	Movement sequencing
+	AprilTag interpretation
+	Harvest decision logic
+- robot_vision
+	AprilTag detection
+	Cabbage size detection
+	Possibly OpenCV pipeline
+- robot_actuator
+	Interface to planting ESP32
+	Publish plant commands
+- robot_bringup
+	Launch files
+	Node orchestration
+- robot_interfaces
+	Custom ROS 2 messages
+	Plant command
+	Detection result
+	Encoder feedback
+	Status messages
+- robot_dashboard
+	FastAPI backend
+	rosbridge connection
+	Web-based read-only monitoring
+	Displays:
+		Robot state
+		Progress
+		Encoder values
+		Detection results
+		
+		
+Vision System
+
+📷 Camera 1 (Perpendicular to floor)
+Purpose:
+	Detect planter edge
+	Align robot
+	Enter planter box
+
+📷 Camera 2 (Parallel to floor)
+Purpose:
+	Detect cabbages
+	Detect planter end wall
+	Trigger primary stop condition
+	
+
+AprilTag Task Encoding
+
+[AB][C][DE]
+
+AB = Seed Gap (cm)
+C = Transition Gap
+DE = Cabbage Spacing (cm)
+
+
+Stop Architecture (Layered)
+
+Priority 1 — Emergency Stop
+: If obstacle < 0.15 m → STOP immediately
+
+Priority 2 — Vision Stop (Camera 2)
+: Use edge of planting box detection
+	Vertical wall dominance
+	AND
+	Horizontal edge disappears
+	FOR N frames
+
+Priority 3 — Encoder Safety Stop
+: Calculate from all distance
+	PLANTER_LENGTH = 1.50
+	ENTRY_MARGIN = 0.30
+	STOP_DISTANCE = PLANTER_LENGTH + ENTRY_MARGIN
+	If distance_inside_planter >= STOP_DISTANCE → STOP
+	
+	
+Entry Strategy
+
+Entry logic:
+1. Camera 1 detects long horizontal edge
+2. Align parallel
+3. Move to correct offset
+4. Enter straight
+5. Reset encoder
+6. Switch to planting mode
+
+
+Planting Sequence
+
+Reset encoder
+Move AB → Plant Seed 1
+Move AB → Plant Seed 2
+Move C×5 → Start cabbage detection
+Move DE repeatedly → Detect cabbage
+Monitor stop conditions continuously
+
+

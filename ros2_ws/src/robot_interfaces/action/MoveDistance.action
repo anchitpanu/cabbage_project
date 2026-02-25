@@ -1,0 +1,5 @@
+float32 distance_cm
+---
+bool success
+---
+float32 remaining_cm
