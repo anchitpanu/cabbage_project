@@ -4,6 +4,7 @@ from std_msgs.msg import Int32MultiArray, Bool
 
 from robot_core.entry_controller import EntryController
 from robot_core.movement_node import MovementNode
+import time
 
 
 class MissionNode(Node):

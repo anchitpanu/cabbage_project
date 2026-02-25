@@ -1,0 +1,20 @@
+[0.038s] Invoking command in '/home/quin/cabbage_project/ros2_ws/build/robot_actuator': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy /usr/bin/cmake --build /home/quin/cabbage_project/ros2_ws/build/robot_actuator -- -j4 -l4
+[0.692s] Invoked command in '/home/quin/cabbage_project/ros2_ws/build/robot_actuator' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy /usr/bin/cmake --build /home/quin/cabbage_project/ros2_ws/build/robot_actuator -- -j4 -l4
+[0.711s] Invoking command in '/home/quin/cabbage_project/ros2_ws/build/robot_actuator': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy /usr/bin/cmake --install /home/quin/cabbage_project/ros2_ws/build/robot_actuator
+[1.031s] -- Install configuration: ""
+[1.031s] -- Up-to-date: /home/quin/cabbage_project/ros2_ws/install/robot_actuator/share/ament_index/resource_index/package_run_dependencies/robot_actuator
+[1.031s] -- Up-to-date: /home/quin/cabbage_project/ros2_ws/install/robot_actuator/share/ament_index/resource_index/parent_prefix_path/robot_actuator
+[1.031s] -- Up-to-date: /home/quin/cabbage_project/ros2_ws/install/robot_actuator/share/robot_actuator/environment/ament_prefix_path.sh
+[1.031s] -- Up-to-date: /home/quin/cabbage_project/ros2_ws/install/robot_actuator/share/robot_actuator/environment/ament_prefix_path.dsv
+[1.031s] -- Up-to-date: /home/quin/cabbage_project/ros2_ws/install/robot_actuator/share/robot_actuator/environment/path.sh
+[1.031s] -- Up-to-date: /home/quin/cabbage_project/ros2_ws/install/robot_actuator/share/robot_actuator/environment/path.dsv
+[1.031s] -- Up-to-date: /home/quin/cabbage_project/ros2_ws/install/robot_actuator/share/robot_actuator/local_setup.bash
+[1.032s] -- Up-to-date: /home/quin/cabbage_project/ros2_ws/install/robot_actuator/share/robot_actuator/local_setup.sh
+[1.032s] -- Up-to-date: /home/quin/cabbage_project/ros2_ws/install/robot_actuator/share/robot_actuator/local_setup.zsh
+[1.032s] -- Up-to-date: /home/quin/cabbage_project/ros2_ws/install/robot_actuator/share/robot_actuator/local_setup.dsv
+[1.032s] -- Installing: /home/quin/cabbage_project/ros2_ws/install/robot_actuator/share/robot_actuator/package.dsv
+[1.032s] -- Up-to-date: /home/quin/cabbage_project/ros2_ws/install/robot_actuator/share/ament_index/resource_index/packages/robot_actuator
+[1.032s] -- Up-to-date: /home/quin/cabbage_project/ros2_ws/install/robot_actuator/share/robot_actuator/cmake/robot_actuatorConfig.cmake
+[1.032s] -- Up-to-date: /home/quin/cabbage_project/ros2_ws/install/robot_actuator/share/robot_actuator/cmake/robot_actuatorConfig-version.cmake
+[1.033s] -- Up-to-date: /home/quin/cabbage_project/ros2_ws/install/robot_actuator/share/robot_actuator/package.xml
+[1.045s] Invoked command in '/home/quin/cabbage_project/ros2_ws/build/robot_actuator' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy /usr/bin/cmake --install /home/quin/cabbage_project/ros2_ws/build/robot_actuator
