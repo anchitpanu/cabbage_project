@@ -20,6 +20,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'mission_node = robot_core.mission_node:main',
+            'movement_node = robot_core.movement_node:main',
+            'entry_controller = robot_core.entry_controller:main',
         ],
     },
 )
