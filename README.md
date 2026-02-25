@@ -1,1 +1,1 @@
-# cabbage_planting_robot_project
+# cabbage planting robot project (Auto)
