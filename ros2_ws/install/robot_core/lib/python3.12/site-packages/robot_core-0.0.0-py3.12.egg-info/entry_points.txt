@@ -1,0 +1,4 @@
+[console_scripts]
+entry_controller = robot_core.entry_controller:main
+mission_node = robot_core.mission_node:main
+movement_node = robot_core.movement_node:main

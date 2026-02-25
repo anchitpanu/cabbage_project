@@ -1,0 +1,35 @@
+[2.157s] Invoking command in '/home/quin/cabbage_project/ros2_ws/src/robot_vision': PYTHONPATH=/home/quin/cabbage_project/ros2_ws/build/robot_vision/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/robot_vision build --build-base /home/quin/cabbage_project/ros2_ws/build/robot_vision/build install --record /home/quin/cabbage_project/ros2_ws/build/robot_vision/install.log --single-version-externally-managed install_data
+[2.514s] running egg_info
+[2.514s] creating ../../build/robot_vision/robot_vision.egg-info
+[2.538s] writing ../../build/robot_vision/robot_vision.egg-info/PKG-INFO
+[2.538s] writing dependency_links to ../../build/robot_vision/robot_vision.egg-info/dependency_links.txt
+[2.538s] writing requirements to ../../build/robot_vision/robot_vision.egg-info/requires.txt
+[2.538s] writing top-level names to ../../build/robot_vision/robot_vision.egg-info/top_level.txt
+[2.539s] writing manifest file '../../build/robot_vision/robot_vision.egg-info/SOURCES.txt'
+[2.587s] reading manifest file '../../build/robot_vision/robot_vision.egg-info/SOURCES.txt'
+[2.587s] writing manifest file '../../build/robot_vision/robot_vision.egg-info/SOURCES.txt'
+[2.588s] running build
+[2.588s] running build_py
+[2.588s] creating /home/quin/cabbage_project/ros2_ws/build/robot_vision/build
+[2.588s] creating /home/quin/cabbage_project/ros2_ws/build/robot_vision/build/lib
+[2.588s] creating /home/quin/cabbage_project/ros2_ws/build/robot_vision/build/lib/robot_vision
+[2.588s] copying robot_vision/__init__.py -> /home/quin/cabbage_project/ros2_ws/build/robot_vision/build/lib/robot_vision
+[2.589s] copying robot_vision/vision_end_detector.py -> /home/quin/cabbage_project/ros2_ws/build/robot_vision/build/lib/robot_vision
+[2.589s] running install
+[2.598s] running install_lib
+[2.623s] creating /home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/python3.12/site-packages/robot_vision
+[2.623s] copying /home/quin/cabbage_project/ros2_ws/build/robot_vision/build/lib/robot_vision/__init__.py -> /home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/python3.12/site-packages/robot_vision
+[2.623s] copying /home/quin/cabbage_project/ros2_ws/build/robot_vision/build/lib/robot_vision/vision_end_detector.py -> /home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/python3.12/site-packages/robot_vision
+[2.624s] byte-compiling /home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/python3.12/site-packages/robot_vision/__init__.py to __init__.cpython-312.pyc
+[2.624s] byte-compiling /home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/python3.12/site-packages/robot_vision/vision_end_detector.py to vision_end_detector.cpython-312.pyc
+[2.625s] running install_data
+[2.625s] creating /home/quin/cabbage_project/ros2_ws/install/robot_vision/share/ament_index
+[2.625s] creating /home/quin/cabbage_project/ros2_ws/install/robot_vision/share/ament_index/resource_index
+[2.625s] creating /home/quin/cabbage_project/ros2_ws/install/robot_vision/share/ament_index/resource_index/packages
+[2.625s] copying resource/robot_vision -> /home/quin/cabbage_project/ros2_ws/install/robot_vision/share/ament_index/resource_index/packages
+[2.625s] copying package.xml -> /home/quin/cabbage_project/ros2_ws/install/robot_vision/share/robot_vision
+[2.625s] running install_egg_info
+[2.652s] Copying ../../build/robot_vision/robot_vision.egg-info to /home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/python3.12/site-packages/robot_vision-0.0.0-py3.12.egg-info
+[2.653s] running install_scripts
+[2.834s] writing list of installed files to '/home/quin/cabbage_project/ros2_ws/build/robot_vision/install.log'
+[2.910s] Invoked command in '/home/quin/cabbage_project/ros2_ws/src/robot_vision' returned '0': PYTHONPATH=/home/quin/cabbage_project/ros2_ws/build/robot_vision/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/robot_vision build --build-base /home/quin/cabbage_project/ros2_ws/build/robot_vision/build install --record /home/quin/cabbage_project/ros2_ws/build/robot_vision/install.log --single-version-externally-managed install_data
