@@ -1,0 +1,67 @@
+ขั้นตอนที่ 1: โอนไฟล์ไป Pi5
+Download โฟลเดอร์ best_ncnn_model จาก Drive มาที่คอมก่อน แล้วโอนไป Pi5
+bash# รันบนคอม
+scp -r best_ncnn_model/ pi@<IP_ของ_Pi5>:/home/pi/robot/
+
+ขั้นตอนที่ 2: ติดตั้ง library บน Pi5
+bashpip install ultralytics opencv-python pyserial --break-system-packages
+
+ขั้นตอนที่ 3: สร้างไฟล์ main.py
+bashnano /home/pi/robot/main.py
+วางโค้ดนี้
+pythonimport cv2
+import serial
+import time
+from ultralytics import YOLO
+
+model = YOLO('/home/pi/robot/best_ncnn_model', task='detect')
+ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
+
+cap = cv2.VideoCapture(0)
+frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+last_cmd = ""
+tag_was_seen = False
+
+def send_command(cmd):
+    global last_cmd
+    if cmd != last_cmd:
+        ser.write(f"{cmd}\n".encode())
+        print(f"CMD: {cmd}")
+        last_cmd = cmd
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        continue
+
+    results = model(frame, conf=0.5, verbose=False)[0]
+
+    if len(results.boxes) == 0:
+        if tag_was_seen:
+            # เคยเห็น tag แล้วหาย = ถึงปากแปลงแล้ว
+            send_command("STOP")
+            print("ถึงปากแปลงแล้ว")
+            break
+        else:
+            send_command("SEARCH")
+    else:
+        tag_was_seen = True
+        box = results.boxes[0]
+        x1, y1, x2, y2 = map(int, box.xyxy[0])
+        center_x = (x1 + x2) / 2
+
+        if center_x < frame_width * 0.35:
+            send_command("TURN_LEFT")
+        elif center_x > frame_width * 0.65:
+            send_command("TURN_RIGHT")
+        else:
+            send_command("MOVE_FORWARD")
+
+    time.sleep(0.1)
+
+cap.release()
+
+ขั้นตอนที่ 4: รัน
+bashpython3 /home/pi/robot/main.py
