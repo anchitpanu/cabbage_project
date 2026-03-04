@@ -1,0 +1,86 @@
+import cv2
+import serial
+import time
+from ultralytics import YOLO
+
+# โหลดโมเดล
+model = YOLO('/home/pi/robot/cab_model/best_ncnn_model', task='detect')
+ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
+
+# ค่า calibration
+CAMERA_HEIGHT = 32.5
+FOCAL_LENGTH  = 440
+
+# รับ harvest size จาก ESP32
+harvest_size_cm = None
+print("รอรับ harvest size จาก ESP32...")
+while harvest_size_cm is None:
+    if ser.in_waiting:
+        line = ser.readline().decode().strip()
+        if line.startswith("HARVEST_SIZE:"):
+            harvest_size_cm = float(line.split(":")[1])
+            print(f"Harvest size: {harvest_size_cm} ซม.")
+
+cap = cv2.VideoCapture(0)
+frame_width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+last_cmd = ""
+
+def send_command(cmd):
+    global last_cmd
+    if cmd != last_cmd:
+        ser.write(f"{cmd}\n".encode())
+        print(f"CMD: {cmd}")
+        last_cmd = cmd
+
+def estimate_size(pixel_width):
+    return (pixel_width * CAMERA_HEIGHT) / FOCAL_LENGTH
+
+print("เริ่มทำงาน...")
+send_command("MOVE_FORWARD")
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        continue
+
+    results = model(frame, conf=0.5, verbose=False)[0]
+
+    if len(results.boxes) == 0:
+        send_command("MOVE_FORWARD")
+        time.sleep(0.1)
+        continue
+
+    # เลือก box ใหญ่สุด
+    best_box = max(results.boxes,
+                   key=lambda b: (b.xyxy[0][2]-b.xyxy[0][0]) *
+                                 (b.xyxy[0][3]-b.xyxy[0][1]))
+
+    x1, y1, x2, y2 = map(int, best_box.xyxy[0])
+    center_y    = (y1 + y2) / 2
+    pixel_width = x2 - x1
+    size_cm     = estimate_size(pixel_width)
+
+    top_bound    = frame_height * 0.4
+    bottom_bound = frame_height * 0.6
+
+    if top_bound <= center_y <= bottom_bound:
+        # บอลอยู่กลางจอ หยุด
+        send_command("STOP")
+        print(f"พบบอล ขนาด: {size_cm:.1f} ซม.")
+
+        if size_cm >= harvest_size_cm:
+            ser.write(b"READY_TO_HARVEST\n")
+            print(f"พร้อมเก็บ! ({size_cm:.1f} ซม. >= {harvest_size_cm} ซม.)")
+        else:
+            print(f"ยังไม่ถึงขนาด ({size_cm:.1f} ซม.)")
+
+        time.sleep(1)
+        send_command("MOVE_FORWARD")
+    else:
+        send_command("MOVE_FORWARD")
+
+    time.sleep(0.1)
+
+cap.release()
