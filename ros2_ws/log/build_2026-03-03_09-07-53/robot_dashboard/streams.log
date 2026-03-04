@@ -1,0 +1,19 @@
+[2.702s] Invoking command in '/home/quin/cabbage_project/ros2_ws/src/robot_dashboard': PS1=(vision_env) \[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ PYTHONPATH=/home/quin/cabbage_project/ros2_ws/build/robot_dashboard/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/quin/cabbage_project/ros2_ws/install/robot_dashboard/lib/python3.12/site-packages:${PYTHONPATH} VIRTUAL_ENV_PROMPT=(vision_env) /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/robot_dashboard build --build-base /home/quin/cabbage_project/ros2_ws/build/robot_dashboard/build install --record /home/quin/cabbage_project/ros2_ws/build/robot_dashboard/install.log --single-version-externally-managed install_data
+[3.139s] running egg_info
+[3.163s] writing ../../build/robot_dashboard/robot_dashboard.egg-info/PKG-INFO
+[3.165s] writing dependency_links to ../../build/robot_dashboard/robot_dashboard.egg-info/dependency_links.txt
+[3.175s] writing requirements to ../../build/robot_dashboard/robot_dashboard.egg-info/requires.txt
+[3.177s] writing top-level names to ../../build/robot_dashboard/robot_dashboard.egg-info/top_level.txt
+[3.233s] reading manifest file '../../build/robot_dashboard/robot_dashboard.egg-info/SOURCES.txt'
+[3.235s] writing manifest file '../../build/robot_dashboard/robot_dashboard.egg-info/SOURCES.txt'
+[3.236s] running build
+[3.236s] running build_py
+[3.236s] running install
+[3.248s] running install_lib
+[3.276s] running install_data
+[3.276s] running install_egg_info
+[3.306s] removing '/home/quin/cabbage_project/ros2_ws/install/robot_dashboard/lib/python3.12/site-packages/robot_dashboard-0.0.0-py3.12.egg-info' (and everything under it)
+[3.306s] Copying ../../build/robot_dashboard/robot_dashboard.egg-info to /home/quin/cabbage_project/ros2_ws/install/robot_dashboard/lib/python3.12/site-packages/robot_dashboard-0.0.0-py3.12.egg-info
+[3.310s] running install_scripts
+[3.558s] writing list of installed files to '/home/quin/cabbage_project/ros2_ws/build/robot_dashboard/install.log'
+[3.705s] Invoked command in '/home/quin/cabbage_project/ros2_ws/src/robot_dashboard' returned '0': PS1=(vision_env) \[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ PYTHONPATH=/home/quin/cabbage_project/ros2_ws/build/robot_dashboard/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/quin/cabbage_project/ros2_ws/install/robot_dashboard/lib/python3.12/site-packages:${PYTHONPATH} VIRTUAL_ENV_PROMPT=(vision_env) /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/robot_dashboard build --build-base /home/quin/cabbage_project/ros2_ws/build/robot_dashboard/build install --record /home/quin/cabbage_project/ros2_ws/build/robot_dashboard/install.log --single-version-externally-managed install_data

@@ -23,6 +23,7 @@ setup(
             'mission_node = robot_core.mission_node:main',
             'movement_node = robot_core.movement_node:main',
             'entry_controller = robot_core.entry_controller:main',
+            'movement_test_node = robot_core.movement_test_node:main',
         ],
     },
 )

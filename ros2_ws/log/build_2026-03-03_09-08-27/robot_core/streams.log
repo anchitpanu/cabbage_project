@@ -1,0 +1,24 @@
+[2.142s] Invoking command in '/home/quin/cabbage_project/ros2_ws/src/robot_core': PS1=(vision_env) \[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ PYTHONPATH=/home/quin/cabbage_project/ros2_ws/build/robot_core/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/quin/cabbage_project/ros2_ws/install/robot_core/lib/python3.12/site-packages:${PYTHONPATH} VIRTUAL_ENV_PROMPT=(vision_env) /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/robot_core build --build-base /home/quin/cabbage_project/ros2_ws/build/robot_core/build install --record /home/quin/cabbage_project/ros2_ws/build/robot_core/install.log --single-version-externally-managed install_data
+[2.666s] running egg_info
+[2.693s] writing ../../build/robot_core/robot_core.egg-info/PKG-INFO
+[2.694s] writing dependency_links to ../../build/robot_core/robot_core.egg-info/dependency_links.txt
+[2.701s] writing entry points to ../../build/robot_core/robot_core.egg-info/entry_points.txt
+[2.701s] writing requirements to ../../build/robot_core/robot_core.egg-info/requires.txt
+[2.704s] writing top-level names to ../../build/robot_core/robot_core.egg-info/top_level.txt
+[2.776s] reading manifest file '../../build/robot_core/robot_core.egg-info/SOURCES.txt'
+[2.778s] writing manifest file '../../build/robot_core/robot_core.egg-info/SOURCES.txt'
+[2.779s] running build
+[2.779s] running build_py
+[2.783s] running install
+[2.793s] running install_lib
+[2.829s] running install_data
+[2.829s] running install_egg_info
+[2.866s] removing '/home/quin/cabbage_project/ros2_ws/install/robot_core/lib/python3.12/site-packages/robot_core-0.0.0-py3.12.egg-info' (and everything under it)
+[2.866s] Copying ../../build/robot_core/robot_core.egg-info to /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/python3.12/site-packages/robot_core-0.0.0-py3.12.egg-info
+[2.869s] running install_scripts
+[3.096s] Installing entry_controller script to /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/robot_core
+[3.096s] Installing mission_node script to /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/robot_core
+[3.100s] Installing movement_node script to /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/robot_core
+[3.102s] Installing movement_test_node script to /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/robot_core
+[3.102s] writing list of installed files to '/home/quin/cabbage_project/ros2_ws/build/robot_core/install.log'
+[3.294s] Invoked command in '/home/quin/cabbage_project/ros2_ws/src/robot_core' returned '0': PS1=(vision_env) \[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ PYTHONPATH=/home/quin/cabbage_project/ros2_ws/build/robot_core/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/quin/cabbage_project/ros2_ws/install/robot_core/lib/python3.12/site-packages:${PYTHONPATH} VIRTUAL_ENV_PROMPT=(vision_env) /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/robot_core build --build-base /home/quin/cabbage_project/ros2_ws/build/robot_core/build install --record /home/quin/cabbage_project/ros2_ws/build/robot_core/install.log --single-version-externally-managed install_data

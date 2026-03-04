@@ -1,0 +1,2 @@
+[console_scripts]
+apriltag_node = cabbage_robot_vision.apriltag_node:main

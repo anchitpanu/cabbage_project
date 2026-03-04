@@ -1,0 +1,24 @@
+[1.466s] Invoking command in '/home/quin/cabbage_project/ros2_ws/src/robot_vision': PS1=(vision_env) \[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ PYTHONPATH=/home/quin/cabbage_project/ros2_ws/build/robot_vision/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/python3.12/site-packages:${PYTHONPATH} VIRTUAL_ENV_PROMPT=(vision_env) /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/robot_vision build --build-base /home/quin/cabbage_project/ros2_ws/build/robot_vision/build install --record /home/quin/cabbage_project/ros2_ws/build/robot_vision/install.log --single-version-externally-managed install_data
+[1.898s] running egg_info
+[1.926s] writing ../../build/robot_vision/robot_vision.egg-info/PKG-INFO
+[1.926s] writing dependency_links to ../../build/robot_vision/robot_vision.egg-info/dependency_links.txt
+[1.930s] writing entry points to ../../build/robot_vision/robot_vision.egg-info/entry_points.txt
+[1.930s] writing requirements to ../../build/robot_vision/robot_vision.egg-info/requires.txt
+[1.930s] writing top-level names to ../../build/robot_vision/robot_vision.egg-info/top_level.txt
+[1.984s] reading manifest file '../../build/robot_vision/robot_vision.egg-info/SOURCES.txt'
+[1.991s] writing manifest file '../../build/robot_vision/robot_vision.egg-info/SOURCES.txt'
+[1.991s] running build
+[1.991s] running build_py
+[1.991s] copying robot_vision/apriltag_node.py -> /home/quin/cabbage_project/ros2_ws/build/robot_vision/build/lib/robot_vision
+[1.991s] running install
+[2.001s] running install_lib
+[2.031s] copying /home/quin/cabbage_project/ros2_ws/build/robot_vision/build/lib/robot_vision/apriltag_node.py -> /home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/python3.12/site-packages/robot_vision
+[2.032s] byte-compiling /home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/python3.12/site-packages/robot_vision/apriltag_node.py to apriltag_node.cpython-312.pyc
+[2.034s] running install_data
+[2.034s] running install_egg_info
+[2.069s] removing '/home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/python3.12/site-packages/robot_vision-0.0.0-py3.12.egg-info' (and everything under it)
+[2.070s] Copying ../../build/robot_vision/robot_vision.egg-info to /home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/python3.12/site-packages/robot_vision-0.0.0-py3.12.egg-info
+[2.075s] running install_scripts
+[2.410s] Installing apriltag_node script to /home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/robot_vision
+[2.414s] writing list of installed files to '/home/quin/cabbage_project/ros2_ws/build/robot_vision/install.log'
+[2.539s] Invoked command in '/home/quin/cabbage_project/ros2_ws/src/robot_vision' returned '0': PS1=(vision_env) \[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ PYTHONPATH=/home/quin/cabbage_project/ros2_ws/build/robot_vision/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/python3.12/site-packages:${PYTHONPATH} VIRTUAL_ENV_PROMPT=(vision_env) /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/robot_vision build --build-base /home/quin/cabbage_project/ros2_ws/build/robot_vision/build install --record /home/quin/cabbage_project/ros2_ws/build/robot_vision/install.log --single-version-externally-managed install_data

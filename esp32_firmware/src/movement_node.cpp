@@ -40,7 +40,7 @@ std_msgs__msg__Float32 distance_msg;
 rcl_subscription_t motor_subscriber;
 geometry_msgs__msg__Twist motor_msg;
 
-rcl_subscription_t reset_subscriber;           // subscribes /quin/reset_distance
+rcl_subscription_t reset_subscriber;
 geometry_msgs__msg__Twist reset_msg;
 
 rclc_executor_t executor;
@@ -57,6 +57,7 @@ float distance_inside_planter = 0.0f;
 const float WHEEL_CIRCUMFERENCE = M_PI * WHEEL_DIAMETER;
 
 // -------- Command timeout tracking --------
+// FIX #3: initialized to 0, will be set to millis() in createEntities()
 unsigned long prev_cmd_time = 0;
 
 // -------- Encoder variables --------
@@ -65,7 +66,7 @@ volatile int32_t motor2_encoder_ticks = 0;
 volatile int32_t motor3_encoder_ticks = 0;
 volatile int32_t motor4_encoder_ticks = 0;
 
-// Both RISING and FALLING edges for better accuracy
+// Channel A interrupts (CHANGE)
 void IRAM_ATTR handleEncoder_MOTOR1_A() { motor1_encoder_ticks += digitalRead(MOTOR1_ENCODER_PIN_B) ? 1 : -1; }
 void IRAM_ATTR handleEncoder_MOTOR2_A() { motor2_encoder_ticks += digitalRead(MOTOR2_ENCODER_PIN_B) ? 1 : -1; }
 void IRAM_ATTR handleEncoder_MOTOR3_A() { motor3_encoder_ticks += digitalRead(MOTOR3_ENCODER_PIN_B) ? 1 : -1; }
@@ -148,7 +149,7 @@ void loop()
         case AGENT_AVAILABLE:
             state = (true == createEntities()) ? AGENT_CONNECTED : WAITING_AGENT;
             if (state == WAITING_AGENT) {
-                destroyEntities();      // FIX: clean up on partial failure
+                destroyEntities();
             }
             break;
 
@@ -163,7 +164,7 @@ void loop()
             break;
 
         case AGENT_DISCONNECTED:
-            // FIX: stop motors immediately on disconnect
+            // Stop motors immediately on disconnect
             digitalWrite(MOTOR1_IN_A, LOW); digitalWrite(MOTOR1_IN_B, LOW);
             digitalWrite(MOTOR2_IN_A, LOW); digitalWrite(MOTOR2_IN_B, LOW);
             digitalWrite(MOTOR3_IN_A, LOW); digitalWrite(MOTOR3_IN_B, LOW);
@@ -181,7 +182,7 @@ void twistCallback(const void *msgin)
     const geometry_msgs__msg__Twist *msg =
         (const geometry_msgs__msg__Twist *)msgin;
     motor_msg = *msg;
-    prev_cmd_time = millis();       // FIX: update timestamp on every command
+    prev_cmd_time = millis();
 }
 
 void resetCallback(const void *msgin)
@@ -223,15 +224,15 @@ void setMotor(int a, int b, float rpm)
 
 void driveDifferential()
 {
-    // FIX: command timeout safety stop
+    // Command timeout safety stop
     if (millis() - prev_cmd_time > CMD_TIMEOUT_MS) {
         setMotor(MOTOR1_IN_A, MOTOR1_IN_B, 0);
         setMotor(MOTOR2_IN_A, MOTOR2_IN_B, 0);
         setMotor(MOTOR3_IN_A, MOTOR3_IN_B, 0);
         setMotor(MOTOR4_IN_A, MOTOR4_IN_B, 0);
-        debug_motor_msg.linear.x = 0;
-        debug_motor_msg.linear.y = 0;
-        debug_motor_msg.linear.z = 0;
+        debug_motor_msg.linear.x  = 0;
+        debug_motor_msg.linear.y  = 0;
+        debug_motor_msg.linear.z  = 0;
         debug_motor_msg.angular.z = 0;
         return;
     }
@@ -245,7 +246,7 @@ void driveDifferential()
     float wheel_left  = Vx - (Wz * LR_WHEELS_DISTANCE * 0.5f);
     float wheel_right = Vx + (Wz * LR_WHEELS_DISTANCE * 0.5f);
 
-    // m/s → RPM (used for direction sign only since motors are on/off)
+    // m/s → RPM (used for direction sign only — motors are bang-bang)
     float left_rpm  = (wheel_left  / (2.0f * M_PI * WHEEL_RADIUS)) * 60.0f;
     float right_rpm = (wheel_right / (2.0f * M_PI * WHEEL_RADIUS)) * 60.0f;
 
@@ -266,11 +267,13 @@ void Encoder()
 {
     static int32_t prev1 = 0, prev2 = 0, prev3 = 0, prev4 = 0;
 
-    // Snapshot ticks (atomic on ESP32 for 32-bit values)
+    // FIX #2: Atomic snapshot — disable interrupts while reading
+    noInterrupts();
     int32_t t1 = motor1_encoder_ticks;
     int32_t t2 = motor2_encoder_ticks;
     int32_t t3 = motor3_encoder_ticks;
     int32_t t4 = motor4_encoder_ticks;
+    interrupts();
 
     int32_t d1 = t1 - prev1;
     int32_t d2 = t2 - prev2;
@@ -282,15 +285,13 @@ void Encoder()
     prev3 = t3;
     prev4 = t4;
 
-    // FIX: separate left/right averaging before combining
     // Motor 1 & 3 = left side, Motor 2 & 4 = right side
     float avg_left  = (d1 + d3) / 2.0f;
     float avg_right = (d2 + d4) / 2.0f;
 
-    // FIX: only accumulate linear distance, not turning motion
-    // During a turn avg_left and avg_right cancel out correctly here
-    float avg_ticks    = (avg_left + avg_right) / 2.0f;
-    float revolutions  = avg_ticks / (float)ENCODER_TICKS_PER_REV;
+    // Average left+right cancels turning motion, keeps only linear distance
+    float avg_ticks      = (avg_left + avg_right) / 2.0f;
+    float revolutions    = avg_ticks / (float)ENCODER_TICKS_PER_REV;
     float delta_distance = revolutions * WHEEL_CIRCUMFERENCE;
 
     distance_inside_planter += delta_distance;
@@ -350,7 +351,7 @@ bool createEntities()
     RCCHECK(rclc_subscription_init_best_effort(
         &reset_subscriber, &node,
         ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist),
-        "/quin/reset_distance"));     // FIX: renamed from cmd_encoder — clearer intent
+        "/quin/reset_distance"));
 
     // Timer (20ms = 50Hz control loop)
     RCCHECK(rclc_timer_init_default(
@@ -375,6 +376,9 @@ bool createEntities()
     geometry_msgs__msg__Twist__init(&debug_encoder_msg);
     std_msgs__msg__Float32__init(&distance_msg);
 
+    // FIX #3: reset timeout only after agent is connected, not at boot
+    prev_cmd_time = millis();
+
     return true;
 }
 
@@ -385,7 +389,6 @@ bool destroyEntities()
     rmw_context_t *rmw_context = rcl_context_get_rmw_context(&support.context);
     (void)rmw_uros_set_context_entity_destroy_session_timeout(rmw_context, 0);
 
-    // FIX: destroy ALL entities (publishers, subscribers, timer, node, executor, support)
     RCSOFTCHECK(rcl_publisher_fini(&debug_motor_publisher, &node));
     RCSOFTCHECK(rcl_publisher_fini(&debug_encoder_publisher, &node));
     RCSOFTCHECK(rcl_publisher_fini(&distance_publisher, &node));
