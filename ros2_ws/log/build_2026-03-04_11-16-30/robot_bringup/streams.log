@@ -1,0 +1,19 @@
+[5.795s] Invoking command in '/home/quin/cabbage_project/ros2_ws/src/robot_bringup': PYTHONPATH=/home/quin/cabbage_project/ros2_ws/build/robot_bringup/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/quin/cabbage_project/ros2_ws/install/robot_bringup/lib/python3.12/site-packages:${PYTHONPATH} VIRTUAL_ENV_PROMPT=(vision_env) /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/robot_bringup build --build-base /home/quin/cabbage_project/ros2_ws/build/robot_bringup/build install --record /home/quin/cabbage_project/ros2_ws/build/robot_bringup/install.log --single-version-externally-managed install_data
+[6.828s] running egg_info
+[6.912s] writing ../../build/robot_bringup/robot_bringup.egg-info/PKG-INFO
+[6.925s] writing dependency_links to ../../build/robot_bringup/robot_bringup.egg-info/dependency_links.txt
+[6.928s] writing requirements to ../../build/robot_bringup/robot_bringup.egg-info/requires.txt
+[6.928s] writing top-level names to ../../build/robot_bringup/robot_bringup.egg-info/top_level.txt
+[7.001s] reading manifest file '../../build/robot_bringup/robot_bringup.egg-info/SOURCES.txt'
+[7.001s] writing manifest file '../../build/robot_bringup/robot_bringup.egg-info/SOURCES.txt'
+[7.001s] running build
+[7.001s] running build_py
+[7.001s] running install
+[7.017s] running install_lib
+[7.082s] running install_data
+[7.083s] running install_egg_info
+[7.136s] removing '/home/quin/cabbage_project/ros2_ws/install/robot_bringup/lib/python3.12/site-packages/robot_bringup-0.0.0-py3.12.egg-info' (and everything under it)
+[7.137s] Copying ../../build/robot_bringup/robot_bringup.egg-info to /home/quin/cabbage_project/ros2_ws/install/robot_bringup/lib/python3.12/site-packages/robot_bringup-0.0.0-py3.12.egg-info
+[7.142s] running install_scripts
+[7.533s] writing list of installed files to '/home/quin/cabbage_project/ros2_ws/build/robot_bringup/install.log'
+[7.913s] Invoked command in '/home/quin/cabbage_project/ros2_ws/src/robot_bringup' returned '0': PYTHONPATH=/home/quin/cabbage_project/ros2_ws/build/robot_bringup/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/quin/cabbage_project/ros2_ws/install/robot_bringup/lib/python3.12/site-packages:${PYTHONPATH} VIRTUAL_ENV_PROMPT=(vision_env) /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/robot_bringup build --build-base /home/quin/cabbage_project/ros2_ws/build/robot_bringup/build install --record /home/quin/cabbage_project/ros2_ws/build/robot_bringup/install.log --single-version-externally-managed install_data

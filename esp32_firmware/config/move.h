@@ -1,5 +1,5 @@
-#ifndef BASE_MOVE_H
-#define BASE_MOVE_H
+#ifndef MOVE_H
+#define MOVE_H
 
 /*
 ROBOT ORIENTATION

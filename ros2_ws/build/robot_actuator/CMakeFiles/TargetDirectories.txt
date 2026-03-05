@@ -1,9 +1,0 @@
-/home/quin/cabbage_project/ros2_ws/build/robot_actuator/CMakeFiles/uninstall.dir
-/home/quin/cabbage_project/ros2_ws/build/robot_actuator/CMakeFiles/robot_actuator_uninstall.dir
-/home/quin/cabbage_project/ros2_ws/build/robot_actuator/CMakeFiles/test.dir
-/home/quin/cabbage_project/ros2_ws/build/robot_actuator/CMakeFiles/edit_cache.dir
-/home/quin/cabbage_project/ros2_ws/build/robot_actuator/CMakeFiles/rebuild_cache.dir
-/home/quin/cabbage_project/ros2_ws/build/robot_actuator/CMakeFiles/list_install_components.dir
-/home/quin/cabbage_project/ros2_ws/build/robot_actuator/CMakeFiles/install.dir
-/home/quin/cabbage_project/ros2_ws/build/robot_actuator/CMakeFiles/install/local.dir
-/home/quin/cabbage_project/ros2_ws/build/robot_actuator/CMakeFiles/install/strip.dir

@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'apriltag_node = robot_vision.apriltag_node:main',
+            'camera_node = robot_vision.camera_node:main',
         ],
     },
 )

@@ -1,9 +1,0 @@
-/home/quin/cabbage_project/ros2_ws/build/robot_interfaces/CMakeFiles/uninstall.dir
-/home/quin/cabbage_project/ros2_ws/build/robot_interfaces/CMakeFiles/robot_interfaces_uninstall.dir
-/home/quin/cabbage_project/ros2_ws/build/robot_interfaces/CMakeFiles/test.dir
-/home/quin/cabbage_project/ros2_ws/build/robot_interfaces/CMakeFiles/edit_cache.dir
-/home/quin/cabbage_project/ros2_ws/build/robot_interfaces/CMakeFiles/rebuild_cache.dir
-/home/quin/cabbage_project/ros2_ws/build/robot_interfaces/CMakeFiles/list_install_components.dir
-/home/quin/cabbage_project/ros2_ws/build/robot_interfaces/CMakeFiles/install.dir
-/home/quin/cabbage_project/ros2_ws/build/robot_interfaces/CMakeFiles/install/local.dir
-/home/quin/cabbage_project/ros2_ws/build/robot_interfaces/CMakeFiles/install/strip.dir

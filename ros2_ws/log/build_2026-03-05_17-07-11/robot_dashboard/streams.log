@@ -1,0 +1,19 @@
+[2.944s] Invoking command in '/home/quin/cabbage_project/ros2_ws/src/robot_dashboard': PYTHONPATH=/home/quin/cabbage_project/ros2_ws/build/robot_dashboard/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/quin/cabbage_project/ros2_ws/install/robot_dashboard/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/robot_dashboard build --build-base /home/quin/cabbage_project/ros2_ws/build/robot_dashboard/build install --record /home/quin/cabbage_project/ros2_ws/build/robot_dashboard/install.log --single-version-externally-managed install_data
+[3.402s] running egg_info
+[3.426s] writing ../../build/robot_dashboard/robot_dashboard.egg-info/PKG-INFO
+[3.427s] writing dependency_links to ../../build/robot_dashboard/robot_dashboard.egg-info/dependency_links.txt
+[3.431s] writing requirements to ../../build/robot_dashboard/robot_dashboard.egg-info/requires.txt
+[3.436s] writing top-level names to ../../build/robot_dashboard/robot_dashboard.egg-info/top_level.txt
+[3.490s] reading manifest file '../../build/robot_dashboard/robot_dashboard.egg-info/SOURCES.txt'
+[3.495s] writing manifest file '../../build/robot_dashboard/robot_dashboard.egg-info/SOURCES.txt'
+[3.497s] running build
+[3.497s] running build_py
+[3.498s] running install
+[3.508s] running install_lib
+[3.537s] running install_data
+[3.537s] running install_egg_info
+[3.568s] removing '/home/quin/cabbage_project/ros2_ws/install/robot_dashboard/lib/python3.12/site-packages/robot_dashboard-0.0.0-py3.12.egg-info' (and everything under it)
+[3.568s] Copying ../../build/robot_dashboard/robot_dashboard.egg-info to /home/quin/cabbage_project/ros2_ws/install/robot_dashboard/lib/python3.12/site-packages/robot_dashboard-0.0.0-py3.12.egg-info
+[3.578s] running install_scripts
+[3.789s] writing list of installed files to '/home/quin/cabbage_project/ros2_ws/build/robot_dashboard/install.log'
+[3.934s] Invoked command in '/home/quin/cabbage_project/ros2_ws/src/robot_dashboard' returned '0': PYTHONPATH=/home/quin/cabbage_project/ros2_ws/build/robot_dashboard/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/quin/cabbage_project/ros2_ws/install/robot_dashboard/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/robot_dashboard build --build-base /home/quin/cabbage_project/ros2_ws/build/robot_dashboard/build install --record /home/quin/cabbage_project/ros2_ws/build/robot_dashboard/install.log --single-version-externally-managed install_data

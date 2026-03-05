@@ -24,6 +24,8 @@ setup(
             'movement_node = robot_core.movement_node:main',
             'entry_controller = robot_core.entry_controller:main',
             'movement_test_node = robot_core.movement_test_node:main',
+            'movement_final = robot_core.movement_final:main',
+            'planting_node = robot_core.planting_node:main',
         ],
     },
 )

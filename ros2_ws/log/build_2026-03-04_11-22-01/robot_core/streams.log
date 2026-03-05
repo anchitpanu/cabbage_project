@@ -1,0 +1,24 @@
+[3.331s] Invoking command in '/home/quin/cabbage_project/ros2_ws/src/robot_core': PYTHONPATH=/home/quin/cabbage_project/ros2_ws/build/robot_core/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/quin/cabbage_project/ros2_ws/install/robot_core/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/robot_core build --build-base /home/quin/cabbage_project/ros2_ws/build/robot_core/build install --record /home/quin/cabbage_project/ros2_ws/build/robot_core/install.log --single-version-externally-managed install_data
+[3.995s] running egg_info
+[4.026s] writing ../../build/robot_core/robot_core.egg-info/PKG-INFO
+[4.026s] writing dependency_links to ../../build/robot_core/robot_core.egg-info/dependency_links.txt
+[4.030s] writing entry points to ../../build/robot_core/robot_core.egg-info/entry_points.txt
+[4.033s] writing requirements to ../../build/robot_core/robot_core.egg-info/requires.txt
+[4.034s] writing top-level names to ../../build/robot_core/robot_core.egg-info/top_level.txt
+[4.109s] reading manifest file '../../build/robot_core/robot_core.egg-info/SOURCES.txt'
+[4.109s] writing manifest file '../../build/robot_core/robot_core.egg-info/SOURCES.txt'
+[4.110s] running build
+[4.112s] running build_py
+[4.114s] running install
+[4.125s] running install_lib
+[4.170s] running install_data
+[4.171s] running install_egg_info
+[4.219s] removing '/home/quin/cabbage_project/ros2_ws/install/robot_core/lib/python3.12/site-packages/robot_core-0.0.0-py3.12.egg-info' (and everything under it)
+[4.227s] Copying ../../build/robot_core/robot_core.egg-info to /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/python3.12/site-packages/robot_core-0.0.0-py3.12.egg-info
+[4.230s] running install_scripts
+[4.536s] Installing entry_controller script to /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/robot_core
+[4.536s] Installing mission_node script to /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/robot_core
+[4.540s] Installing movement_node script to /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/robot_core
+[4.543s] Installing movement_test_node script to /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/robot_core
+[4.544s] writing list of installed files to '/home/quin/cabbage_project/ros2_ws/build/robot_core/install.log'
+[4.744s] Invoked command in '/home/quin/cabbage_project/ros2_ws/src/robot_core' returned '0': PYTHONPATH=/home/quin/cabbage_project/ros2_ws/build/robot_core/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/quin/cabbage_project/ros2_ws/install/robot_core/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/robot_core build --build-base /home/quin/cabbage_project/ros2_ws/build/robot_core/build install --record /home/quin/cabbage_project/ros2_ws/build/robot_core/install.log --single-version-externally-managed install_data

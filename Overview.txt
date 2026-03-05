@@ -1,3 +1,6 @@
+IP Quin : 10.129.196.237
+
+
 Mission Overview
 
 Robot is an autonomous agricultural platform designed to:

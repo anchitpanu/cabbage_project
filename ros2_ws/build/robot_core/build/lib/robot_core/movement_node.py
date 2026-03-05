@@ -1,8 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
-from std_msgs.msg import Float32, Bool
-import time
+from std_msgs.msg import Float32
 
 
 class MovementNode(Node):
@@ -13,18 +12,15 @@ class MovementNode(Node):
         # ---------------- Parameters ----------------
         self.linear_speed = 0.20
         self.distance_tolerance = 0.005
-
-        self.PLANTER_LENGTH = 1.50
-        self.ENTRY_MARGIN = 0.30
-        self.STOP_DISTANCE = self.PLANTER_LENGTH + self.ENTRY_MARGIN
+        self.MAX_TRAVEL_DISTANCE = 1.70
         self.OBSTACLE_THRESHOLD = 0.15
 
         # ---------------- Internal State ----------------
         self.current_distance = 0.0
         self.target_distance = 0.0
+        self.start_distance = 0.0
         self.moving = False
 
-        self.vision_end = False
         self.obstacle_distance = 999.0
 
         # ---------------- Publishers ----------------
@@ -49,13 +45,6 @@ class MovementNode(Node):
         )
 
         self.create_subscription(
-            Bool,
-            '/vision_end_detected',
-            self.vision_callback,
-            10
-        )
-
-        self.create_subscription(
             Float32,
             '/obstacle_distance',
             self.obstacle_callback,
@@ -74,37 +63,34 @@ class MovementNode(Node):
     def distance_callback(self, msg):
         self.current_distance = msg.data
 
-    def vision_callback(self, msg):
-        self.vision_end = msg.data
-
     def obstacle_callback(self, msg):
         self.obstacle_distance = msg.data
 
     # ==================================================
-    # Public API
+    # Public API (for mission node)
     # ==================================================
 
     def move_distance(self, meters):
-        """
-        Blocking movement call.
-        Used by mission_node.
-        """
 
-        self.get_logger().info(f"Move {meters:.3f} m")
+        if self.moving:
+            self.get_logger().warn("Already moving")
+            return
 
-        self.reset_distance()
-        time.sleep(0.1)
+        # safety check
+        if self.current_distance + meters > self.MAX_TRAVEL_DISTANCE:
+            meters = self.MAX_TRAVEL_DISTANCE - self.current_distance
+            self.get_logger().warn(
+                f"Clamped distance to {meters:.3f} m due to safety limit"
+            )
 
+        self.start_distance = self.current_distance
         self.target_distance = meters
         self.moving = True
 
-        while rclpy.ok() and self.moving:
-            rclpy.spin_once(self, timeout_sec=0.01)
-
-        self.get_logger().info("Movement finished")
+        self.get_logger().info(f"Start move {meters:.3f} m")
 
     def stop(self):
-        self.publish_velocity(0.0)
+        self.abort_motion()
 
     # ==================================================
     # Control Loop
@@ -115,32 +101,28 @@ class MovementNode(Node):
         if not self.moving:
             return
 
-        # ---------------- 🔴 Priority 1: Obstacle ----------------
+        # ---------------- Obstacle Safety ----------------
         if self.obstacle_distance < self.OBSTACLE_THRESHOLD:
             self.get_logger().warn("EMERGENCY STOP: Obstacle")
             self.abort_motion()
             return
 
-        # ---------------- 🟢 Priority 2: Vision End ----------------
-        if self.vision_end:
-            self.get_logger().info("STOP: Vision End")
-            self.abort_motion()
-            return
-
-        # ---------------- 🟡 Priority 3: Encoder Safety ----------------
-        if self.current_distance >= self.STOP_DISTANCE:
-            self.get_logger().warn("STOP: Encoder Safety Limit")
+        # ---------------- Total Distance Safety ----------------
+        if self.current_distance >= self.MAX_TRAVEL_DISTANCE:
+            self.get_logger().warn("STOP: Max planter distance reached")
             self.abort_motion()
             return
 
         # ---------------- Target Distance ----------------
-        error = self.target_distance - self.current_distance
+        travelled = self.current_distance - self.start_distance
+        error = self.target_distance - travelled
 
         if error <= self.distance_tolerance:
+            self.get_logger().info("Target distance reached")
             self.abort_motion()
             return
 
-        # Normal forward movement
+        # ---------------- Move Forward ----------------
         self.publish_velocity(self.linear_speed)
 
     # ==================================================
@@ -156,10 +138,6 @@ class MovementNode(Node):
     def abort_motion(self):
         self.publish_velocity(0.0)
         self.moving = False
-
-    def reset_distance(self):
-        msg = Twist()
-        self.reset_pub.publish(msg)
 
 
 # ======================================================

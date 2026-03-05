@@ -1,0 +1,44 @@
+[2.780s] Invoking command in '/home/quin/cabbage_project/ros2_ws/src/robot_vision': PYTHONPATH=/home/quin/cabbage_project/ros2_ws/build/robot_vision/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/robot_vision build --build-base /home/quin/cabbage_project/ros2_ws/build/robot_vision/build install --record /home/quin/cabbage_project/ros2_ws/build/robot_vision/install.log --single-version-externally-managed install_data
+[3.516s] running egg_info
+[3.522s] creating ../../build/robot_vision/robot_vision.egg-info
+[3.555s] writing ../../build/robot_vision/robot_vision.egg-info/PKG-INFO
+[3.556s] writing dependency_links to ../../build/robot_vision/robot_vision.egg-info/dependency_links.txt
+[3.557s] writing entry points to ../../build/robot_vision/robot_vision.egg-info/entry_points.txt
+[3.558s] writing requirements to ../../build/robot_vision/robot_vision.egg-info/requires.txt
+[3.559s] writing top-level names to ../../build/robot_vision/robot_vision.egg-info/top_level.txt
+[3.561s] writing manifest file '../../build/robot_vision/robot_vision.egg-info/SOURCES.txt'
+[3.733s] reading manifest file '../../build/robot_vision/robot_vision.egg-info/SOURCES.txt'
+[3.736s] writing manifest file '../../build/robot_vision/robot_vision.egg-info/SOURCES.txt'
+[3.736s] running build
+[3.736s] running build_py
+[3.736s] creating /home/quin/cabbage_project/ros2_ws/build/robot_vision/build
+[3.737s] creating /home/quin/cabbage_project/ros2_ws/build/robot_vision/build/lib
+[3.737s] creating /home/quin/cabbage_project/ros2_ws/build/robot_vision/build/lib/robot_vision
+[3.738s] copying robot_vision/camera_node.py -> /home/quin/cabbage_project/ros2_ws/build/robot_vision/build/lib/robot_vision
+[3.744s] copying robot_vision/__init__.py -> /home/quin/cabbage_project/ros2_ws/build/robot_vision/build/lib/robot_vision
+[3.745s] copying robot_vision/cabbage_main.py -> /home/quin/cabbage_project/ros2_ws/build/robot_vision/build/lib/robot_vision
+[3.745s] copying robot_vision/apriltag_node.py -> /home/quin/cabbage_project/ros2_ws/build/robot_vision/build/lib/robot_vision
+[3.747s] running install
+[3.763s] running install_lib
+[3.807s] creating /home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/python3.12/site-packages/robot_vision
+[3.808s] copying /home/quin/cabbage_project/ros2_ws/build/robot_vision/build/lib/robot_vision/camera_node.py -> /home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/python3.12/site-packages/robot_vision
+[3.809s] copying /home/quin/cabbage_project/ros2_ws/build/robot_vision/build/lib/robot_vision/__init__.py -> /home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/python3.12/site-packages/robot_vision
+[3.809s] copying /home/quin/cabbage_project/ros2_ws/build/robot_vision/build/lib/robot_vision/cabbage_main.py -> /home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/python3.12/site-packages/robot_vision
+[3.812s] copying /home/quin/cabbage_project/ros2_ws/build/robot_vision/build/lib/robot_vision/apriltag_node.py -> /home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/python3.12/site-packages/robot_vision
+[3.812s] byte-compiling /home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/python3.12/site-packages/robot_vision/camera_node.py to camera_node.cpython-312.pyc
+[3.814s] byte-compiling /home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/python3.12/site-packages/robot_vision/__init__.py to __init__.cpython-312.pyc
+[3.816s] byte-compiling /home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/python3.12/site-packages/robot_vision/cabbage_main.py to cabbage_main.cpython-312.pyc
+[3.818s] byte-compiling /home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/python3.12/site-packages/robot_vision/apriltag_node.py to apriltag_node.cpython-312.pyc
+[3.820s] running install_data
+[3.821s] creating /home/quin/cabbage_project/ros2_ws/install/robot_vision/share/ament_index
+[3.821s] creating /home/quin/cabbage_project/ros2_ws/install/robot_vision/share/ament_index/resource_index
+[3.821s] creating /home/quin/cabbage_project/ros2_ws/install/robot_vision/share/ament_index/resource_index/packages
+[3.822s] copying resource/robot_vision -> /home/quin/cabbage_project/ros2_ws/install/robot_vision/share/ament_index/resource_index/packages
+[3.822s] copying package.xml -> /home/quin/cabbage_project/ros2_ws/install/robot_vision/share/robot_vision
+[3.826s] running install_egg_info
+[3.889s] Copying ../../build/robot_vision/robot_vision.egg-info to /home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/python3.12/site-packages/robot_vision-0.0.0-py3.12.egg-info
+[3.890s] running install_scripts
+[4.233s] Installing apriltag_node script to /home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/robot_vision
+[4.234s] Installing camera_node script to /home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/robot_vision
+[4.234s] writing list of installed files to '/home/quin/cabbage_project/ros2_ws/build/robot_vision/install.log'
+[4.350s] Invoked command in '/home/quin/cabbage_project/ros2_ws/src/robot_vision' returned '0': PYTHONPATH=/home/quin/cabbage_project/ros2_ws/build/robot_vision/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/quin/cabbage_project/ros2_ws/install/robot_vision/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/robot_vision build --build-base /home/quin/cabbage_project/ros2_ws/build/robot_vision/build install --record /home/quin/cabbage_project/ros2_ws/build/robot_vision/install.log --single-version-externally-managed install_data
