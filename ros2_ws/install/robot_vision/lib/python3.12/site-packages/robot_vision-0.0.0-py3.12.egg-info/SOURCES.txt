@@ -11,7 +11,7 @@ setup.py
 resource/robot_vision
 robot_vision/__init__.py
 robot_vision/apriltag_node.py
-robot_vision/cabbage_main.py
+robot_vision/cabbage_detector_node.py
 robot_vision/camera_node.py
 test/test_copyright.py
 test/test_flake8.py

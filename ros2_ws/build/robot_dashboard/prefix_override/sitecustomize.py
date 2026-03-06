@@ -1,4 +1,4 @@
 import sys
 if sys.prefix == '/usr':
     sys.real_prefix = sys.prefix
-    sys.prefix = sys.exec_prefix = '/home/quin/cabbage_project/ros2_ws/install/robot_dashboard'
+    sys.prefix = sys.exec_prefix = '/home/earn/cabbage_project/ros2_ws/install/robot_dashboard'
