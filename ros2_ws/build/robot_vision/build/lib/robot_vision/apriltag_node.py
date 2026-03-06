@@ -26,7 +26,7 @@ class AprilTagNode(Node):
         # Subscriber
         self.create_subscription(
             Image,
-            '/quin/image_raw',
+            '/image_raw',
             self.image_callback,
             10,
             callback_group=self.cb_group
@@ -77,11 +77,14 @@ class AprilTagNode(Node):
 
         try:
             # Resize to reduce CPU load
-            frame_resized = cv2.resize(frame, (640, 360), interpolation=cv2.INTER_LINEAR)
+            frame_resized = cv2.resize(frame, (640, 480), interpolation=cv2.INTER_LINEAR)
             gray = cv2.cvtColor(frame_resized, cv2.COLOR_BGR2GRAY)
 
             # Normalize contrast — helps in poor lighting
-            gray = cv2.equalizeHist(gray)
+            #gray = cv2.equalizeHist(gray)
+
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+            gray = clahe.apply(gray)
 
             results = self.detector.detect(gray)
 
@@ -125,7 +128,7 @@ class AprilTagNode(Node):
     def decode_tag(self, tag_id):
         """
         Decode tag ID into mission parameters.
-        Format: AABCDE (6-digit number)
+        Format: ABCDE (5-digit number)
           AB  = tag_id // 1000       → distance in cm
           C   = (tag_id // 100) % 10 → spacing code (mapped)
           DE  = tag_id % 100         → another distance in cm

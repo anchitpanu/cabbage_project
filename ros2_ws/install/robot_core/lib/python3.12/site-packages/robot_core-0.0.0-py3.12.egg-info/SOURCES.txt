@@ -16,6 +16,7 @@ robot_core/mission_order_node.py
 robot_core/movement_final.py
 robot_core/movement_node.py
 robot_core/movement_test_node.py
+robot_core/planting_node.py
 test/test_copyright.py
 test/test_flake8.py
 test/test_pep257.py

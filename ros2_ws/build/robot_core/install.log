@@ -1,6 +1,7 @@
 /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/python3.12/site-packages/robot_core/movement_test_node.py
 /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/python3.12/site-packages/robot_core/movement_node.py
 /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/python3.12/site-packages/robot_core/mission_order_node.py
+/home/quin/cabbage_project/ros2_ws/install/robot_core/lib/python3.12/site-packages/robot_core/planting_node.py
 /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/python3.12/site-packages/robot_core/mission_node.py
 /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/python3.12/site-packages/robot_core/__init__.py
 /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/python3.12/site-packages/robot_core/entry_controller.py
@@ -8,6 +9,7 @@
 /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/python3.12/site-packages/robot_core/__pycache__/movement_test_node.cpython-312.pyc
 /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/python3.12/site-packages/robot_core/__pycache__/movement_node.cpython-312.pyc
 /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/python3.12/site-packages/robot_core/__pycache__/mission_order_node.cpython-312.pyc
+/home/quin/cabbage_project/ros2_ws/install/robot_core/lib/python3.12/site-packages/robot_core/__pycache__/planting_node.cpython-312.pyc
 /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/python3.12/site-packages/robot_core/__pycache__/mission_node.cpython-312.pyc
 /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/python3.12/site-packages/robot_core/__pycache__/__init__.cpython-312.pyc
 /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/python3.12/site-packages/robot_core/__pycache__/entry_controller.cpython-312.pyc
@@ -23,5 +25,7 @@
 /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/python3.12/site-packages/robot_core-0.0.0-py3.12.egg-info/dependency_links.txt
 /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/robot_core/entry_controller
 /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/robot_core/mission_node
+/home/quin/cabbage_project/ros2_ws/install/robot_core/lib/robot_core/movement_final
 /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/robot_core/movement_node
 /home/quin/cabbage_project/ros2_ws/install/robot_core/lib/robot_core/movement_test_node
+/home/quin/cabbage_project/ros2_ws/install/robot_core/lib/robot_core/planting_node

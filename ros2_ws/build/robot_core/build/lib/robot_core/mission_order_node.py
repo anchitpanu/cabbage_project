@@ -151,7 +151,7 @@ class MissionNode(Node):
         # ---- Transition ----
         elif step == 4:
             extra_offset = 0.30  # front-to-back robot offset in meters
-            transition = (self.C * 5) + extra_offset
+            transition = self.C + extra_offset
             self.send_move(transition)
 
         # ---- Cabbage Loop ----
