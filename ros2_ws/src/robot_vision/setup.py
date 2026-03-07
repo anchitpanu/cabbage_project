@@ -22,7 +22,10 @@ setup(
         'console_scripts': [
             'apriltag_node = robot_vision.apriltag_node:main',
             'cabbage_detector_node = robot_vision.cabbage_detector_node:main',
+            'entry_node = robot_vision.entry_node:main',
+
             'camera_node = robot_vision.camera_node:main',
+            'entering = robot_vision.entering:main',
         ],
     },
 )

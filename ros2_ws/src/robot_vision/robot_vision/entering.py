@@ -1,15 +1,20 @@
 
-# source ~/robot_env/bin/activate 
-# before run
-
+# on pc export ROS_DOMAIN_ID=77 and run 
+# ros2 run rqt_image_view rqt_image_view
+# and
+# ros2 topic echo /vision/state
 
 import rclpy
 from rclpy.node import Node
 
 from geometry_msgs.msg import Twist
+from sensor_msgs.msg import Image
+from std_msgs.msg import String
+from cv_bridge import CvBridge
 
 import cv2
 import time
+import torch
 from ultralytics import YOLO
 
 
@@ -19,19 +24,28 @@ class VisionNavNode(Node):
 
         super().__init__('vision_navigation')
 
-        self.publisher = self.create_publisher(Twist, '/cmd_vel', 10)
+        # publishers
+        self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.image_pub = self.create_publisher(Image, '/vision/debug_image', 10)
+        self.state_pub = self.create_publisher(String, '/vision/state', 10)
 
-        import torch
+        self.bridge = CvBridge()
+
+        # torch optimization
         torch.set_num_threads(4)
         torch.backends.quantized.engine = 'qnnpack'
 
-        self.model = YOLO('/home/pi/model/best.pt')
+        # load model
+        self.model = YOLO('/home/quin/cabbage_project/cab_model/best.pt')
 
+        # camera
         self.cap = cv2.VideoCapture(0)
 
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
+        # navigation states
         self.STATE = "START_CURVE"
 
         self.curve_start = time.time()
@@ -49,6 +63,16 @@ class VisionNavNode(Node):
         self.timer = self.create_timer(0.05, self.loop)
 
 
+    def send_cmd(self, linear, angular):
+
+        msg = Twist()
+
+        msg.linear.x = linear
+        msg.angular.z = angular
+
+        self.cmd_pub.publish(msg)
+
+
     def loop(self):
 
         ret, frame = self.cap.read()
@@ -56,18 +80,15 @@ class VisionNavNode(Node):
         if not ret:
             return
 
-        results = self.model(frame, imgsz=416, conf=0.4)
+        # YOLO detect
+        results = self.model(frame, imgsz=256, conf=0.4, verbose=False)
 
         tag_detected = False
         center_x = None
 
         boxes = results[0].boxes
 
-
-        # -------------------------
-        # เลือก TAG BOX
-        # -------------------------
-
+        # select smallest box
         if boxes is not None and len(boxes) > 0:
 
             smallest_area = 999999999
@@ -75,7 +96,7 @@ class VisionNavNode(Node):
 
             for box in boxes.xyxy:
 
-                x1,y1,x2,y2 = box
+                x1, y1, x2, y2 = box
 
                 area = float((x2-x1)*(y2-y1))
 
@@ -86,7 +107,7 @@ class VisionNavNode(Node):
 
             if best_box is not None:
 
-                x1,y1,x2,y2 = best_box
+                x1, y1, x2, y2 = best_box
 
                 center_x = float((x1+x2)/2)
 
@@ -99,8 +120,7 @@ class VisionNavNode(Node):
             self.lost_counter += 1
 
 
-        # HOLD detection
-
+        # hold detection
         if tag_detected:
 
             self.last_center = center_x
@@ -111,7 +131,6 @@ class VisionNavNode(Node):
 
 
         # smoothing
-
         if center_x is not None and self.prev_center is not None:
 
             center_x = 0.7*self.prev_center + 0.3*center_x
@@ -212,22 +231,29 @@ class VisionNavNode(Node):
             self.send_cmd(0.0, 0.0)
 
 
-        # debug view
+        # publish state for debugging
+        state_msg = String()
+        state_msg.data = self.STATE
+        self.state_pub.publish(state_msg)
+
+
+        # -------------------------
+        # DEBUG IMAGE (ROS TOPIC)
+        # -------------------------
 
         annotated = results[0].plot()
 
         cv2.line(
             annotated,
-            (self.TARGET_X,0),
-            (self.TARGET_X,480),
-            (255,0,0),
+            (self.TARGET_X, 0),
+            (self.TARGET_X, 480),
+            (255, 0, 0),
             2
         )
 
-        cv2.imshow("vision nav", annotated)
+        img_msg = self.bridge.cv2_to_imgmsg(annotated, encoding="bgr8")
 
-        cv2.waitKey(1)
-
+        self.image_pub.publish(img_msg)
 
 
 def main():
@@ -243,6 +269,6 @@ def main():
     rclpy.shutdown()
 
 
-
 if __name__ == '__main__':
+
     main()

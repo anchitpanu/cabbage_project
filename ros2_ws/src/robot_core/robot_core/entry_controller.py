@@ -1,102 +1,194 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float32, Bool
 from geometry_msgs.msg import Twist
-import time
+from std_msgs.msg import Float32, Bool
 
 
-class EntryController(Node):
+class EntryNavigation(Node):
 
     def __init__(self):
-        super().__init__('entry_controller')
+        super().__init__('entry_navigation')
 
-        self.edge_detected = False
-        self.angle_error = 0.0
+        # ---------------- Parameters ----------------
+        self.TARGET_X            = 530.0   # pixel center target — adjust per camera mount
+        self.ALIGN_TOLERANCE     = 5.0     # pixels — acceptable alignment error
+        self.APPROACH_TOLERANCE  = 8.0     # pixels — acceptable error while moving
+        self.CURVE_DURATION      = 2.5     # seconds for initial curve
+        self.FINAL_FORWARD_TIME  = 1.6     # seconds of final straight drive
+        self.SEARCH_TIMEOUT      = 10.0    # seconds before search aborts
+        self.TAG_LOST_TIMEOUT    = 1.0     # seconds before tag considered lost
 
-        self.cmd_pub = self.create_publisher(
-            Twist,
-            '/quin/cmd_move',
-            10
-        )
+        # ---------------- Internal State ----------------
+        self.center_x         = None
+        self.tag_last_seen    = None       # ROS time of last tag message
+        self.STATE            = "START_CURVE"
+        self.curve_start      = self.get_clock().now()   # FIX: ROS clock
+        self.final_start      = None
+        self.search_start     = None
+        self._done_published  = False      # FIX: publish done only once
 
-        self.reset_pub = self.create_publisher(
-            Twist,
-            '/quin/reset_distance',
-            10
-        )
+        # ---------------- Publishers ----------------
+        self.cmd_pub  = self.create_publisher(Twist, '/cmd_vel',     10)
+        self.done_pub = self.create_publisher(Bool,  '/entry_done',  10)
 
-        self.create_subscription(
-            Bool,
-            '/planter_edge_detected',
-            self.edge_callback,
-            10
-        )
-
+        # ---------------- Subscribers ----------------
         self.create_subscription(
             Float32,
-            '/planter_angle_error',
-            self.angle_callback,
+            '/tag_center_x',
+            self.tag_callback,
             10
         )
 
-    # ------------------------------------------
+        # ---------------- Timer ----------------
+        self.timer = self.create_timer(0.05, self.loop)
+
+        self.get_logger().info("Entry Navigation Ready")
+
+    # ==================================================
     # Callbacks
-    # ------------------------------------------
+    # ==================================================
 
-    def edge_callback(self, msg):
-        self.edge_detected = msg.data
+    def tag_callback(self, msg):
+        self.center_x      = msg.data
+        self.tag_last_seen = self.get_clock().now()   # FIX: track last seen time
 
-    def angle_callback(self, msg):
-        self.angle_error = msg.data
+    # ==================================================
+    # Helpers
+    # ==================================================
 
-    # ------------------------------------------
-    # Public Entry Function
-    # ------------------------------------------
-
-    def execute_entry(self):
-
-        self.get_logger().info("Starting entry procedure")
-
-        # ---- ALIGN ----
-        while rclpy.ok():
-
-            rclpy.spin_once(self, timeout_sec=0.01)
-
-            if not self.edge_detected:
-                self.publish_cmd(0.0, 0.2)
-                continue
-
-            if abs(self.angle_error) > 3.0:
-                direction = -0.2 if self.angle_error > 0 else 0.2
-                self.publish_cmd(0.0, direction)
-            else:
-                self.stop_robot()
-                break
-
-        self.get_logger().info("Aligned with planter")
-
-        time.sleep(0.5)
-
-        # ---- ENTER ----
-        self.get_logger().info("Entering planter")
-
-        self.publish_cmd(0.15, 0.0)
-        time.sleep(2.0)   # Adjust later with encoder
-        self.stop_robot()
-
-        # Reset encoder after entering
-        self.reset_pub.publish(Twist())
-        time.sleep(0.2)
-
-        self.get_logger().info("Entry complete")
-
-    # ------------------------------------------
-
-    def publish_cmd(self, linear, angular):
+    def send_cmd(self, linear, angular):
         msg = Twist()
-        msg.linear.x = linear
+        msg.linear.x  = linear
         msg.angular.z = angular
         self.cmd_pub.publish(msg)
 
-    def stop_robot(self):
-        self.publish_cmd(0.0, 0.0)
+    def stop(self):
+        self.send_cmd(0.0, 0.0)
+
+    def elapsed(self, since) -> float:
+        """Returns seconds since a ROS Time stamp."""
+        return (self.get_clock().now() - since).nanoseconds / 1e9
+
+    def tag_is_visible(self) -> bool:
+        """
+        FIX: Returns True only if a tag message arrived recently.
+        Prevents acting on stale center_x values.
+        """
+        if self.tag_last_seen is None:
+            return False
+        return self.elapsed(self.tag_last_seen) < self.TAG_LOST_TIMEOUT
+
+    def transition(self, new_state: str):
+        """FIX: Log every state transition for field debugging."""
+        self.get_logger().info(f"State: {self.STATE} → {new_state}")
+        self.STATE = new_state
+
+    def abort(self, reason: str):
+        self.stop()
+        self.get_logger().error(f"Entry ABORTED — {reason}")
+        self.transition("ABORTED")
+        self._publish_done(success=False)
+
+    def _publish_done(self, success: bool):
+        # FIX: Publish done signal exactly once
+        if self._done_published:
+            return
+        self._done_published = True
+        msg = Bool()
+        msg.data = success
+        self.done_pub.publish(msg)
+        self.get_logger().info(f"Entry done — success={success}")
+
+    # ==================================================
+    # Main Loop
+    # ==================================================
+
+    def loop(self):
+
+        if self.STATE in ("STOP", "ABORTED"):
+            return
+
+        # --------------------------------------------------
+        if self.STATE == "START_CURVE":
+            self.send_cmd(0.2, -0.5)
+            # FIX: ROS clock for duration check
+            if self.elapsed(self.curve_start) > self.CURVE_DURATION:
+                self.search_start = self.get_clock().now()
+                self.transition("SEARCH_TAG")
+
+        # --------------------------------------------------
+        elif self.STATE == "SEARCH_TAG":
+            # FIX: Timeout if tag never found
+            if self.elapsed(self.search_start) > self.SEARCH_TIMEOUT:
+                self.abort("Tag not found within timeout")
+                return
+
+            if not self.tag_is_visible():
+                self.send_cmd(0.0, 0.4)
+            else:
+                self.transition("ALIGN_TAG")
+
+        # --------------------------------------------------
+        elif self.STATE == "ALIGN_TAG":
+            # FIX: Abort if tag lost during alignment
+            if not self.tag_is_visible():
+                self.abort("Tag lost during alignment")
+                return
+
+            error = self.center_x - self.TARGET_X
+            if abs(error) < self.ALIGN_TOLERANCE:
+                self.transition("APPROACH_TAG")
+            elif error > 0:
+                self.send_cmd(0.0, -0.4)
+            else:
+                self.send_cmd(0.0,  0.4)
+
+        # --------------------------------------------------
+        elif self.STATE == "APPROACH_TAG":
+            # FIX: Abort if tag lost during approach
+            if not self.tag_is_visible():
+                self.abort("Tag lost during approach")
+                return
+
+            error = self.center_x - self.TARGET_X
+
+            # FIX: Transition to FINAL_FORWARD once well aligned
+            if abs(error) < self.APPROACH_TOLERANCE:
+                self.final_start = self.get_clock().now()   # FIX: set before entering state
+                self.transition("FINAL_FORWARD")
+                return
+
+            if error > 0:
+                self.send_cmd(0.25, -0.2)
+            else:
+                self.send_cmd(0.25,  0.2)
+
+        # --------------------------------------------------
+        elif self.STATE == "FINAL_FORWARD":
+            # FIX: final_start is always set before this state is entered
+            if self.elapsed(self.final_start) > self.FINAL_FORWARD_TIME:
+                self.stop()
+                self.transition("STOP")
+                self._publish_done(success=True)   # FIX: published exactly once
+            else:
+                self.send_cmd(0.25, 0.0)
+
+
+# ======================================================
+# Main
+# ======================================================
+
+def main():
+    rclpy.init()
+    node = EntryNavigation()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()
