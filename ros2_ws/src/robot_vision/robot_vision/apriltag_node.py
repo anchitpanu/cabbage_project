@@ -26,7 +26,7 @@ class AprilTagNode(Node):
         # Subscriber
         self.create_subscription(
             Image,
-            '/quin/image_raw',
+            '/image_raw',
             self.image_callback,
             10,
             callback_group=self.cb_group
