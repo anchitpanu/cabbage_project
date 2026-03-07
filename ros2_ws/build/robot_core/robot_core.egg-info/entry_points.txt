@@ -1,7 +1,0 @@
-[console_scripts]
-entry_controller = robot_core.entry_controller:main
-mission_node = robot_core.mission_node:main
-movement_final = robot_core.movement_final:main
-movement_node = robot_core.movement_node:main
-movement_test_node = robot_core.movement_test_node:main
-planting_node = robot_core.planting_node:main
