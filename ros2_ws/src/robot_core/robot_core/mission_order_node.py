@@ -95,7 +95,12 @@ class MissionNode(Node):
             f"Parameters loaded → AB={self.AB:.3f} m  C={self.C:.3f} m  DE={self.DE:.3f} m"
         )
 
-        self.start_entry_phase()
+        # self.start_entry_phase()      # next enter to planting box 
+        
+        # do mission without entry phase
+        self.get_logger().info("Entry complete — starting mission")
+        self.mission_step = 0
+        self.advance_mission()
 
     # ==================================================
     # Entry Phase
