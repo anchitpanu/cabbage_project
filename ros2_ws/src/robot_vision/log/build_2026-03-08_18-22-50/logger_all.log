@@ -1,0 +1,94 @@
+[0.170s] DEBUG:colcon:Command line arguments: ['/usr/bin/colcon', 'build']
+[0.170s] DEBUG:colcon:Parsed command line arguments: Namespace(log_base=None, log_level=None, verb_name='build', build_base='build', install_base='install', merge_install=False, symlink_install=False, test_result_base=None, continue_on_error=False, executor='parallel', parallel_workers=16, event_handlers=None, ignore_user_meta=False, metas=['./colcon.meta'], base_paths=['.'], packages_ignore=None, packages_ignore_regex=None, paths=None, packages_up_to=None, packages_up_to_regex=None, packages_above=None, packages_above_and_dependencies=None, packages_above_depth=None, packages_select_by_dep=None, packages_skip_by_dep=None, packages_skip_up_to=None, packages_select_build_failed=False, packages_skip_build_finished=False, packages_select_test_failures=False, packages_skip_test_passed=False, packages_select=None, packages_skip=None, packages_select_regex=None, packages_skip_regex=None, packages_start=None, packages_end=None, allow_overriding=[], cmake_args=None, cmake_target=None, cmake_target_skip_unavailable=False, cmake_clean_cache=False, cmake_clean_first=False, cmake_force_configure=False, ament_cmake_args=None, catkin_cmake_args=None, catkin_skip_building_tests=False, mixin_files=None, mixin=None, verb_parser=<colcon_mixin.mixin.mixin_argument.MixinArgumentDecorator object at 0x732348517350>, verb_extension=<colcon_core.verb.build.BuildVerb object at 0x732348516ba0>, main=<bound method BuildVerb.main of <colcon_core.verb.build.BuildVerb object at 0x732348516ba0>>, mixin_verb=('build',))
+[0.202s] Level 1:colcon.colcon_core.package_discovery:discover_packages(colcon_meta) check parameters
+[0.202s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) check parameters
+[0.202s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) check parameters
+[0.202s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) check parameters
+[0.202s] Level 1:colcon.colcon_core.package_discovery:discover_packages(colcon_meta) discover
+[0.202s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) discover
+[0.202s] INFO:colcon.colcon_core.package_discovery:Crawling recursively for packages in '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision'
+[0.202s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['ignore', 'ignore_ament_install']
+[0.202s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ignore'
+[0.202s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ignore_ament_install'
+[0.202s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['colcon_pkg']
+[0.203s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'colcon_pkg'
+[0.203s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['colcon_meta']
+[0.203s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'colcon_meta'
+[0.203s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['ros']
+[0.203s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ros'
+[0.226s] DEBUG:colcon.colcon_core.package_identification:Package '.' with type 'ros.ament_python' and name 'robot_vision'
+[0.226s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) using defaults
+[0.226s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) discover
+[0.226s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) using defaults
+[0.226s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) discover
+[0.226s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) using defaults
+[0.241s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) check parameters
+[0.241s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) discover
+[0.243s] DEBUG:colcon.colcon_installed_package_information.package_discovery:Found 4 installed packages in /home/jorjeen/plant/cabbage_project/ros2_ws/install
+[0.243s] DEBUG:colcon.colcon_installed_package_information.package_discovery:Found 5 installed packages in /home/jorjeen/660610834_final/install
+[0.243s] DEBUG:colcon.colcon_installed_package_information.package_discovery:Found 2 installed packages in /home/jorjeen/660610834_final/src/install
+[0.244s] DEBUG:colcon.colcon_installed_package_information.package_discovery:Found 33 installed packages in /home/jorjeen/ros2_ws/install
+[0.245s] DEBUG:colcon.colcon_installed_package_information.package_discovery:Found 12 installed packages in /home/jorjeen/turtlebot3_ws/install
+[0.246s] DEBUG:colcon.colcon_installed_package_information.package_discovery:Found 352 installed packages in /opt/ros/jazzy
+[0.248s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) using defaults
+[0.283s] Level 5:colcon.colcon_core.verb:set package 'robot_vision' build argument 'cmake_args' from command line to 'None'
+[0.283s] Level 5:colcon.colcon_core.verb:set package 'robot_vision' build argument 'cmake_target' from command line to 'None'
+[0.283s] Level 5:colcon.colcon_core.verb:set package 'robot_vision' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.283s] Level 5:colcon.colcon_core.verb:set package 'robot_vision' build argument 'cmake_clean_cache' from command line to 'False'
+[0.283s] Level 5:colcon.colcon_core.verb:set package 'robot_vision' build argument 'cmake_clean_first' from command line to 'False'
+[0.283s] Level 5:colcon.colcon_core.verb:set package 'robot_vision' build argument 'cmake_force_configure' from command line to 'False'
+[0.283s] Level 5:colcon.colcon_core.verb:set package 'robot_vision' build argument 'ament_cmake_args' from command line to 'None'
+[0.283s] Level 5:colcon.colcon_core.verb:set package 'robot_vision' build argument 'catkin_cmake_args' from command line to 'None'
+[0.283s] Level 5:colcon.colcon_core.verb:set package 'robot_vision' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.283s] DEBUG:colcon.colcon_core.verb:Building package 'robot_vision' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/build/robot_vision', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/robot_vision', 'merge_install': False, 'path': '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision', 'symlink_install': False, 'test_result_base': None}
+[0.283s] INFO:colcon.colcon_core.executor:Executing jobs using 'parallel' executor
+[0.284s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:run_until_complete
+[0.284s] INFO:colcon.colcon_ros.task.ament_python.build:Building ROS package in '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision' with build type 'ament_python'
+[0.284s] Level 1:colcon.colcon_core.shell:create_environment_hook('robot_vision', 'ament_prefix_path')
+[0.287s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_core.shell.bat': Not used on non-Windows systems
+[0.287s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/robot_vision/share/robot_vision/hook/ament_prefix_path.ps1'
+[0.288s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/robot_vision/share/robot_vision/hook/ament_prefix_path.dsv'
+[0.288s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/robot_vision/share/robot_vision/hook/ament_prefix_path.sh'
+[0.289s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.289s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.654s] INFO:colcon.colcon_core.task.python.build:Building Python package in '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision'
+[0.654s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.654s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[1.573s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com PYTHONPATH=/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/build/robot_vision/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/robot_vision/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base build/robot_vision build --build-base /home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/build/robot_vision/build install --record /home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/build/robot_vision/install.log --single-version-externally-managed install_data
+[2.849s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision' returned '0': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com PYTHONPATH=/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/build/robot_vision/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/robot_vision/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base build/robot_vision build --build-base /home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/build/robot_vision/build install --record /home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/build/robot_vision/install.log --single-version-externally-managed install_data
+[2.858s] Level 1:colcon.colcon_core.environment:checking '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/robot_vision' for CMake module files
+[2.859s] Level 1:colcon.colcon_core.environment:checking '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/robot_vision' for CMake config files
+[2.860s] Level 1:colcon.colcon_core.environment:checking '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/robot_vision/lib'
+[2.860s] Level 1:colcon.colcon_core.environment:checking '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/robot_vision/bin'
+[2.860s] Level 1:colcon.colcon_core.environment:checking '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/robot_vision/lib/pkgconfig/robot_vision.pc'
+[2.861s] Level 1:colcon.colcon_core.environment:checking '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/robot_vision/lib/python3.12/site-packages'
+[2.861s] Level 1:colcon.colcon_core.shell:create_environment_hook('robot_vision', 'pythonpath')
+[2.861s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/robot_vision/share/robot_vision/hook/pythonpath.ps1'
+[2.862s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/robot_vision/share/robot_vision/hook/pythonpath.dsv'
+[2.862s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/robot_vision/share/robot_vision/hook/pythonpath.sh'
+[2.863s] Level 1:colcon.colcon_core.environment:checking '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/robot_vision/bin'
+[2.863s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(robot_vision)
+[2.864s] INFO:colcon.colcon_core.shell:Creating package script '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/robot_vision/share/robot_vision/package.ps1'
+[2.865s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/robot_vision/share/robot_vision/package.dsv'
+[2.865s] INFO:colcon.colcon_core.shell:Creating package script '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/robot_vision/share/robot_vision/package.sh'
+[2.866s] INFO:colcon.colcon_core.shell:Creating package script '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/robot_vision/share/robot_vision/package.bash'
+[2.867s] INFO:colcon.colcon_core.shell:Creating package script '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/robot_vision/share/robot_vision/package.zsh'
+[2.867s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/robot_vision/share/colcon-core/packages/robot_vision)
+[2.868s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:closing loop
+[2.868s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:loop closed
+[2.868s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:run_until_complete finished with '0'
+[2.868s] DEBUG:colcon.colcon_core.event_reactor:joining thread
+[2.887s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.terminal_notifier': Not used on non-Darwin systems
+[2.888s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.win32': Not used on non-Windows systems
+[2.888s] INFO:colcon.colcon_notification.desktop_notification:Sending desktop notification using 'notify2'
+[2.919s] DEBUG:colcon.colcon_core.event_reactor:joined thread
+[2.920s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/local_setup.ps1'
+[2.922s] INFO:colcon.colcon_core.shell:Creating prefix util module '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/_local_setup_util_ps1.py'
+[2.924s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/setup.ps1'
+[2.928s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/local_setup.sh'
+[2.929s] INFO:colcon.colcon_core.shell:Creating prefix util module '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/_local_setup_util_sh.py'
+[2.931s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/setup.sh'
+[2.938s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/local_setup.bash'
+[2.939s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/setup.bash'
+[2.944s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/local_setup.zsh'
+[2.945s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision/install/setup.zsh'

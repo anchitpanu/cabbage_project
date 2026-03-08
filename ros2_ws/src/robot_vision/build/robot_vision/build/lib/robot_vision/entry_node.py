@@ -23,7 +23,7 @@ class EntryNode(Node):
         self.TARGET_CLASS = 0
 
         self.TORCH_THREADS = 2        # good for Raspberry Pi
-        self.FRAME_SKIP = 6           # process every 3rd frame
+        self.FRAME_SKIP = 3           # process every 3rd frame
 
         # movement parameters
         self.TARGET_X = 530.0
