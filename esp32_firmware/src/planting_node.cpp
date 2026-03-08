@@ -42,7 +42,7 @@ constexpr int32_t ERR_NONE         = 0;
 constexpr uint8_t PIN_STEP    = 26;
 constexpr uint8_t PIN_DIR     = 27;
 constexpr uint8_t PIN_GRIPPER = 16;
-constexpr uint8_t PIN_FEEDER  = 17;
+constexpr uint8_t PIN_FEEDER  = 19;
 
 // ═══════════════════════════════════════════════════════════════════
 // OTHER PARAMETERS
@@ -50,10 +50,10 @@ constexpr uint8_t PIN_FEEDER  = 17;
 constexpr uint32_t STEPS_DOWN       = 30000; //adjust distance
 constexpr uint32_t STEP_DELAY_US    = 400; //motor speed less-fast
 
-constexpr uint8_t  GRIPPER_OPEN_DEG  = 10;
-constexpr uint8_t  GRIPPER_CLOSE_DEG = 150;
-constexpr uint8_t  FEEDER_OPEN_DEG   = 70;
-constexpr uint8_t  FEEDER_CLOSE_DEG  = 10;
+constexpr uint8_t  GRIPPER_OPEN_DEG  = 90;
+constexpr uint8_t  GRIPPER_CLOSE_DEG = 135;
+constexpr uint8_t  FEEDER_OPEN_DEG   = 180;
+constexpr uint8_t  FEEDER_CLOSE_DEG  = 90;
 
 constexpr uint32_t SERVO_SETTLE_MS   = 1000;   // wait after servo write
 
