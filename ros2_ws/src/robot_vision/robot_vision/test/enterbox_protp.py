@@ -2,7 +2,7 @@ import cv2
 import time
 from ultralytics import YOLO
 
-model = YOLO(r"C:\Users\HP\OneDrive\เดสก์ท็อป\test\best.pt")
+model = YOLO('/home/quin/cabbage_project/entering_model/enterbest.pt')
 
 cap = cv2.VideoCapture(0)
 

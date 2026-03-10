@@ -112,9 +112,12 @@ static void publishError(int32_t code) {
 // STEPPER MOVE
 // ═══════════════════════════════════════════════════════════════════
 static void stepperMove(bool down) {
+
     digitalWrite(PIN_DIR, down ? HIGH : LOW);
 
-    for (uint32_t i = 0; i < STEPS_DOWN; ++i) {
+    uint32_t steps = down ? STEPS_DOWN : STEPS_UP;
+
+    for (uint32_t i = 0; i < steps; ++i) {
         digitalWrite(PIN_STEP, HIGH);
         delayMicroseconds(STEP_DELAY_US);
         digitalWrite(PIN_STEP, LOW);
