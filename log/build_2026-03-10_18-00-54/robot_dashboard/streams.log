@@ -1,0 +1,32 @@
+[2.048s] Invoking command in '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_dashboard': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com PYTHONPATH=/home/jorjeen/plant/cabbage_project/build/robot_dashboard/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/jorjeen/plant/cabbage_project/install/robot_dashboard/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../../build/robot_dashboard build --build-base /home/jorjeen/plant/cabbage_project/build/robot_dashboard/build install --record /home/jorjeen/plant/cabbage_project/build/robot_dashboard/install.log --single-version-externally-managed install_data
+[2.249s] running egg_info
+[2.249s] creating ../../../build/robot_dashboard/robot_dashboard.egg-info
+[2.262s] writing ../../../build/robot_dashboard/robot_dashboard.egg-info/PKG-INFO
+[2.262s] writing dependency_links to ../../../build/robot_dashboard/robot_dashboard.egg-info/dependency_links.txt
+[2.262s] writing requirements to ../../../build/robot_dashboard/robot_dashboard.egg-info/requires.txt
+[2.263s] writing top-level names to ../../../build/robot_dashboard/robot_dashboard.egg-info/top_level.txt
+[2.263s] writing manifest file '../../../build/robot_dashboard/robot_dashboard.egg-info/SOURCES.txt'
+[2.289s] reading manifest file '../../../build/robot_dashboard/robot_dashboard.egg-info/SOURCES.txt'
+[2.289s] writing manifest file '../../../build/robot_dashboard/robot_dashboard.egg-info/SOURCES.txt'
+[2.289s] running build
+[2.289s] running build_py
+[2.290s] creating /home/jorjeen/plant/cabbage_project/build/robot_dashboard/build
+[2.290s] creating /home/jorjeen/plant/cabbage_project/build/robot_dashboard/build/lib
+[2.290s] creating /home/jorjeen/plant/cabbage_project/build/robot_dashboard/build/lib/robot_dashboard
+[2.290s] copying robot_dashboard/__init__.py -> /home/jorjeen/plant/cabbage_project/build/robot_dashboard/build/lib/robot_dashboard
+[2.290s] running install
+[2.294s] running install_lib
+[2.307s] creating /home/jorjeen/plant/cabbage_project/install/robot_dashboard/lib/python3.12/site-packages/robot_dashboard
+[2.307s] copying /home/jorjeen/plant/cabbage_project/build/robot_dashboard/build/lib/robot_dashboard/__init__.py -> /home/jorjeen/plant/cabbage_project/install/robot_dashboard/lib/python3.12/site-packages/robot_dashboard
+[2.308s] byte-compiling /home/jorjeen/plant/cabbage_project/install/robot_dashboard/lib/python3.12/site-packages/robot_dashboard/__init__.py to __init__.cpython-312.pyc
+[2.308s] running install_data
+[2.308s] creating /home/jorjeen/plant/cabbage_project/install/robot_dashboard/share/ament_index
+[2.308s] creating /home/jorjeen/plant/cabbage_project/install/robot_dashboard/share/ament_index/resource_index
+[2.308s] creating /home/jorjeen/plant/cabbage_project/install/robot_dashboard/share/ament_index/resource_index/packages
+[2.309s] copying resource/robot_dashboard -> /home/jorjeen/plant/cabbage_project/install/robot_dashboard/share/ament_index/resource_index/packages
+[2.309s] copying package.xml -> /home/jorjeen/plant/cabbage_project/install/robot_dashboard/share/robot_dashboard
+[2.309s] running install_egg_info
+[2.322s] Copying ../../../build/robot_dashboard/robot_dashboard.egg-info to /home/jorjeen/plant/cabbage_project/install/robot_dashboard/lib/python3.12/site-packages/robot_dashboard-0.0.0-py3.12.egg-info
+[2.323s] running install_scripts
+[2.415s] writing list of installed files to '/home/jorjeen/plant/cabbage_project/build/robot_dashboard/install.log'
+[2.447s] Invoked command in '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_dashboard' returned '0': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com PYTHONPATH=/home/jorjeen/plant/cabbage_project/build/robot_dashboard/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/jorjeen/plant/cabbage_project/install/robot_dashboard/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../../build/robot_dashboard build --build-base /home/jorjeen/plant/cabbage_project/build/robot_dashboard/build install --record /home/jorjeen/plant/cabbage_project/build/robot_dashboard/install.log --single-version-externally-managed install_data

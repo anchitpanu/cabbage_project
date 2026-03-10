@@ -1,0 +1,57 @@
+[2.080s] Invoking command in '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_core': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com PYTHONPATH=/home/jorjeen/plant/cabbage_project/build/robot_core/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/jorjeen/plant/cabbage_project/install/robot_core/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../../build/robot_core build --build-base /home/jorjeen/plant/cabbage_project/build/robot_core/build install --record /home/jorjeen/plant/cabbage_project/build/robot_core/install.log --single-version-externally-managed install_data
+[2.273s] running egg_info
+[2.273s] creating ../../../build/robot_core/robot_core.egg-info
+[2.286s] writing ../../../build/robot_core/robot_core.egg-info/PKG-INFO
+[2.286s] writing dependency_links to ../../../build/robot_core/robot_core.egg-info/dependency_links.txt
+[2.287s] writing entry points to ../../../build/robot_core/robot_core.egg-info/entry_points.txt
+[2.287s] writing requirements to ../../../build/robot_core/robot_core.egg-info/requires.txt
+[2.287s] writing top-level names to ../../../build/robot_core/robot_core.egg-info/top_level.txt
+[2.287s] writing manifest file '../../../build/robot_core/robot_core.egg-info/SOURCES.txt'
+[2.314s] reading manifest file '../../../build/robot_core/robot_core.egg-info/SOURCES.txt'
+[2.314s] writing manifest file '../../../build/robot_core/robot_core.egg-info/SOURCES.txt'
+[2.315s] running build
+[2.315s] running build_py
+[2.315s] creating /home/jorjeen/plant/cabbage_project/build/robot_core/build
+[2.315s] creating /home/jorjeen/plant/cabbage_project/build/robot_core/build/lib
+[2.315s] creating /home/jorjeen/plant/cabbage_project/build/robot_core/build/lib/robot_core
+[2.315s] copying robot_core/detection_node.py -> /home/jorjeen/plant/cabbage_project/build/robot_core/build/lib/robot_core
+[2.315s] copying robot_core/mission_node.py -> /home/jorjeen/plant/cabbage_project/build/robot_core/build/lib/robot_core
+[2.315s] copying robot_core/movement_test_node.py -> /home/jorjeen/plant/cabbage_project/build/robot_core/build/lib/robot_core
+[2.315s] copying robot_core/entry_controller.py -> /home/jorjeen/plant/cabbage_project/build/robot_core/build/lib/robot_core
+[2.315s] copying robot_core/movement_node.py -> /home/jorjeen/plant/cabbage_project/build/robot_core/build/lib/robot_core
+[2.316s] copying robot_core/__init__.py -> /home/jorjeen/plant/cabbage_project/build/robot_core/build/lib/robot_core
+[2.316s] copying robot_core/planting_node.py -> /home/jorjeen/plant/cabbage_project/build/robot_core/build/lib/robot_core
+[2.316s] running install
+[2.320s] running install_lib
+[2.333s] creating /home/jorjeen/plant/cabbage_project/install/robot_core/lib/python3.12/site-packages/robot_core
+[2.333s] copying /home/jorjeen/plant/cabbage_project/build/robot_core/build/lib/robot_core/detection_node.py -> /home/jorjeen/plant/cabbage_project/install/robot_core/lib/python3.12/site-packages/robot_core
+[2.333s] copying /home/jorjeen/plant/cabbage_project/build/robot_core/build/lib/robot_core/mission_node.py -> /home/jorjeen/plant/cabbage_project/install/robot_core/lib/python3.12/site-packages/robot_core
+[2.334s] copying /home/jorjeen/plant/cabbage_project/build/robot_core/build/lib/robot_core/movement_test_node.py -> /home/jorjeen/plant/cabbage_project/install/robot_core/lib/python3.12/site-packages/robot_core
+[2.334s] copying /home/jorjeen/plant/cabbage_project/build/robot_core/build/lib/robot_core/entry_controller.py -> /home/jorjeen/plant/cabbage_project/install/robot_core/lib/python3.12/site-packages/robot_core
+[2.334s] copying /home/jorjeen/plant/cabbage_project/build/robot_core/build/lib/robot_core/movement_node.py -> /home/jorjeen/plant/cabbage_project/install/robot_core/lib/python3.12/site-packages/robot_core
+[2.334s] copying /home/jorjeen/plant/cabbage_project/build/robot_core/build/lib/robot_core/__init__.py -> /home/jorjeen/plant/cabbage_project/install/robot_core/lib/python3.12/site-packages/robot_core
+[2.334s] copying /home/jorjeen/plant/cabbage_project/build/robot_core/build/lib/robot_core/planting_node.py -> /home/jorjeen/plant/cabbage_project/install/robot_core/lib/python3.12/site-packages/robot_core
+[2.334s] byte-compiling /home/jorjeen/plant/cabbage_project/install/robot_core/lib/python3.12/site-packages/robot_core/detection_node.py to detection_node.cpython-312.pyc
+[2.334s] byte-compiling /home/jorjeen/plant/cabbage_project/install/robot_core/lib/python3.12/site-packages/robot_core/mission_node.py to mission_node.cpython-312.pyc
+[2.336s] byte-compiling /home/jorjeen/plant/cabbage_project/install/robot_core/lib/python3.12/site-packages/robot_core/movement_test_node.py to movement_test_node.cpython-312.pyc
+[2.337s] byte-compiling /home/jorjeen/plant/cabbage_project/install/robot_core/lib/python3.12/site-packages/robot_core/entry_controller.py to entry_controller.cpython-312.pyc
+[2.337s] byte-compiling /home/jorjeen/plant/cabbage_project/install/robot_core/lib/python3.12/site-packages/robot_core/movement_node.py to movement_node.cpython-312.pyc
+[2.338s] byte-compiling /home/jorjeen/plant/cabbage_project/install/robot_core/lib/python3.12/site-packages/robot_core/__init__.py to __init__.cpython-312.pyc
+[2.338s] byte-compiling /home/jorjeen/plant/cabbage_project/install/robot_core/lib/python3.12/site-packages/robot_core/planting_node.py to planting_node.cpython-312.pyc
+[2.339s] running install_data
+[2.339s] creating /home/jorjeen/plant/cabbage_project/install/robot_core/share/ament_index
+[2.339s] creating /home/jorjeen/plant/cabbage_project/install/robot_core/share/ament_index/resource_index
+[2.339s] creating /home/jorjeen/plant/cabbage_project/install/robot_core/share/ament_index/resource_index/packages
+[2.339s] copying resource/robot_core -> /home/jorjeen/plant/cabbage_project/install/robot_core/share/ament_index/resource_index/packages
+[2.339s] copying package.xml -> /home/jorjeen/plant/cabbage_project/install/robot_core/share/robot_core
+[2.340s] running install_egg_info
+[2.354s] Copying ../../../build/robot_core/robot_core.egg-info to /home/jorjeen/plant/cabbage_project/install/robot_core/lib/python3.12/site-packages/robot_core-0.0.0-py3.12.egg-info
+[2.354s] running install_scripts
+[2.448s] Installing detection_node script to /home/jorjeen/plant/cabbage_project/install/robot_core/lib/robot_core
+[2.449s] Installing entry_controller script to /home/jorjeen/plant/cabbage_project/install/robot_core/lib/robot_core
+[2.449s] Installing mission_node script to /home/jorjeen/plant/cabbage_project/install/robot_core/lib/robot_core
+[2.449s] Installing movement_node script to /home/jorjeen/plant/cabbage_project/install/robot_core/lib/robot_core
+[2.449s] Installing movement_test_node script to /home/jorjeen/plant/cabbage_project/install/robot_core/lib/robot_core
+[2.449s] Installing planting_node script to /home/jorjeen/plant/cabbage_project/install/robot_core/lib/robot_core
+[2.449s] writing list of installed files to '/home/jorjeen/plant/cabbage_project/build/robot_core/install.log'
+[2.470s] Invoked command in '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_core' returned '0': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com PYTHONPATH=/home/jorjeen/plant/cabbage_project/build/robot_core/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/jorjeen/plant/cabbage_project/install/robot_core/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../../build/robot_core build --build-base /home/jorjeen/plant/cabbage_project/build/robot_core/build install --record /home/jorjeen/plant/cabbage_project/build/robot_core/install.log --single-version-externally-managed install_data
