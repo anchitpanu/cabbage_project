@@ -11,6 +11,7 @@
 # web :
 # http://10.129.196.237:8080/stream?topic=/camera1/image_detected
 
+
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
@@ -39,6 +40,7 @@ class EnterBox(Node):
         self.pub = self.create_publisher(Image, '/camera1/image_detected', 10)
 
         # -------- STATE MACHINE --------
+
         self.STATE = "START_CURVE"
 
         self.curve_start = time.time()
@@ -64,6 +66,7 @@ class EnterBox(Node):
     def send_command(self, cmd):
 
         if cmd != self.last_cmd:
+
             print(f"CMD: {cmd}")
             self.last_cmd = cmd
 
@@ -75,14 +78,18 @@ class EnterBox(Node):
         if self.frame_count % 2 != 0:
             return
 
+
         frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+
         h, w = frame.shape[:2]
+
 
         # -------- YOLO INPUT SMALL --------
         frame_small = cv2.resize(frame, (256, 256))
 
         scale_x = w / 256
         scale_y = h / 256
+
 
         results = self.model(
             frame_small,
@@ -92,6 +99,7 @@ class EnterBox(Node):
             verbose=False
         )[0]
 
+
         action_text = "NONE"
 
         tag_detected = False
@@ -99,7 +107,9 @@ class EnterBox(Node):
 
         boxes = results.boxes
 
+
         # -------- SELECT SMALLEST TAG --------
+
         if boxes is not None and len(boxes) > 0:
 
             smallest_area = 999999999
@@ -112,8 +122,10 @@ class EnterBox(Node):
                 area = float((x2 - x1) * (y2 - y1))
 
                 if area < 60000 and area < smallest_area:
+
                     smallest_area = area
                     best_box = box
+
 
             if best_box is not None:
 
@@ -133,22 +145,33 @@ class EnterBox(Node):
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0,255,0), 2)
 
             else:
+
                 self.lost_counter += 1
 
         else:
+
             self.lost_counter += 1
 
+
         # -------- HOLD DETECTION --------
+
         if tag_detected:
+
             self.last_center = center_x
+
         elif self.last_center is not None:
+
             center_x = self.last_center
 
+
         # -------- SMOOTH CENTER --------
+
         if center_x is not None and self.prev_center is not None:
+
             center_x = 0.7*self.prev_center + 0.3*center_x
 
         self.prev_center = center_x
+
 
         # -------- STATE MACHINE --------
 
@@ -158,34 +181,46 @@ class EnterBox(Node):
             self.send_command(action_text)
 
             if time.time() - self.curve_start > 2.5:
+
                 self.STATE = "SEARCH_TAG"
+
 
         elif self.STATE == "SEARCH_TAG":
 
             if not tag_detected:
+
                 action_text = "ROTATE LEFT"
                 self.send_command(action_text)
+
             else:
+
                 self.STATE = "ALIGN_TAG"
+
 
         elif self.STATE == "ALIGN_TAG":
 
             if center_x is None:
+
                 self.STATE = "SEARCH_TAG"
 
             else:
+
                 error = center_x - self.TARGET_X
 
                 if abs(error) < 5:
+
                     self.STATE = "APPROACH_TAG"
 
                 elif error > 0:
+
                     action_text = "TURN RIGHT"
                     self.send_command(action_text)
 
                 else:
+
                     action_text = "TURN LEFT"
                     self.send_command(action_text)
+
 
         elif self.STATE == "APPROACH_TAG":
 
@@ -194,17 +229,21 @@ class EnterBox(Node):
                 error = center_x - self.TARGET_X
 
                 if abs(error) > 20:
+
                     self.STATE = "ALIGN_TAG"
 
                 else:
 
                     if abs(error) < 8:
+
                         action_text = "FORWARD"
 
                     elif error > 0:
+
                         action_text = "FORWARD_RIGHT"
 
                     else:
+
                         action_text = "FORWARD_LEFT"
 
                     self.send_command(action_text)
@@ -212,11 +251,14 @@ class EnterBox(Node):
             else:
 
                 if self.tag_seen and self.lost_counter > 5:
+
                     self.STATE = "FINAL_FORWARD"
                     self.final_start = time.time()
 
                 else:
+
                     action_text = "TAG LOST"
+
 
         elif self.STATE == "FINAL_FORWARD":
 
@@ -224,12 +266,15 @@ class EnterBox(Node):
             self.send_command(action_text)
 
             if time.time() - self.final_start > self.FINAL_FORWARD_TIME:
+
                 self.STATE = "STOP"
+
 
         elif self.STATE == "STOP":
 
             action_text = "STOP"
             self.send_command(action_text)
+
 
         # -------- VISUAL DEBUG --------
 
@@ -261,8 +306,10 @@ class EnterBox(Node):
                  (255,0,0),
                  2)
 
+
         out_msg = self.bridge.cv2_to_imgmsg(frame, encoding='bgr8')
         self.pub.publish(out_msg)
+
 
 
 def main(args=None):
