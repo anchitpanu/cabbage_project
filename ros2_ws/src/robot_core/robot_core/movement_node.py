@@ -2,6 +2,7 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float32, Bool
+from rclpy.qos import QoSProfile, ReliabilityPolicy
 
 
 class MovementNode(Node):
@@ -13,73 +14,93 @@ class MovementNode(Node):
         self.linear_speed = 0.20
         self.distance_tolerance = 0.005
         self.MAX_TRAVEL_DISTANCE = 1.70
-        self.OBSTACLE_THRESHOLD = 0.15
 
         # Slowdown zone: reduce speed when within this distance of target
         self.SLOWDOWN_ZONE = 0.10
         self.MIN_SPEED = 0.05
 
         # Timeout: abort if move takes longer than this (seconds)
-        self.MOVE_TIMEOUT = 30.0
-
-        # Obstacle sensor watchdog: if no obstacle msg received within this
-        # time, treat it as unsafe (sensor dead)
-        self.OBSTACLE_WATCHDOG_TIMEOUT = 1.0
+        self.MOVE_TIMEOUT = 180.0
 
         # ---------------- Internal State ----------------
-        self._current_distance = 0.0   # written only in distance_callback
+        self._current_distance = 0.0
         self.target_delta = 0.0
         self.start_distance = 0.0
         self.moving = False
+        self._move_start_time = None
 
-        # FIX: default to 0.0 (unsafe) instead of 999.0
-        # Robot will not move until the obstacle sensor publishes at least once
-        self.obstacle_distance = 0.0
-        self.obstacle_last_update = None   # tracks last sensor msg time
-
-        self._move_start_time = None       # for timeout tracking
+        # FIX: reset when first distance message arrives from Arduino
+        self._arduino_ready = False      # becomes True after first distance msg
+        self._reset_confirmed = False    # becomes True after distance reads ~0
 
         # ---------------- Publishers ----------------
         self.cmd_pub = self.create_publisher(
             Twist,
-            '/quin/cmd_move',
+            '/quin/move_command',
             10
         )
 
-        # Signals MissionNode when a move is complete (True) or aborted (False)
         self.done_pub = self.create_publisher(
             Bool,
             '/quin/move_done',
             10
         )
 
+        self.reset_pub = self.create_publisher(
+            Bool,
+            '/quin/reset_distance',
+            10
+        )
+
         # ---------------- Subscribers ----------------
+        # BEST_EFFORT QoS to match Arduino publisher
+        encoder_qos = QoSProfile(
+            depth=10,
+            reliability=ReliabilityPolicy.BEST_EFFORT
+        )
         self.create_subscription(
             Float32,
             '/quin/distance_inside_planter',
             self.distance_callback,
-            10
+            encoder_qos
         )
 
         self.create_subscription(
             Float32,
-            '/obstacle_distance',
-            self.obstacle_callback,
-            10
-        )
-
-        # MissionNode sends a distance (meters) here to trigger movement
-        self.create_subscription(
-            Float32,
-            '/quin/move_command',
+            '/quin/cmd_move',
             self.move_command_callback,
             10
         )
 
-        # ---------------- Control Timer ----------------
+        # ---------------- Timers ----------------
         self.timer = self.create_timer(0.05, self.control_loop)
 
-        self.get_logger().info("Movement Node Ready")
+        self.get_logger().info("Movement Node Ready — waiting for Arduino...")
+
+    # ==================================================
+    # Distance Callback — reset happens here on first message
+    # ==================================================
+
+    def distance_callback(self, msg):
+        self._current_distance = msg.data
+
+        # FIX: first time we receive distance from Arduino → send reset
+        if not self._arduino_ready:
+            self._arduino_ready = True
+            self.get_logger().info(
+                f"Arduino connected — distance was {msg.data:.3f} m, sending reset..."
+            )
+            self._publish_reset()
+            return
+
+        # After reset sent, check if it confirmed
+        if not self._reset_confirmed:
+            if abs(self._current_distance) < 0.01:
+                self._reset_confirmed = True
+                self.get_logger().info("Encoder reset confirmed — ready to move")
+            else:
+                # Still not 0, keep sending reset
+                self._publish_reset()
 
     # ==================================================
     # Thread-safe distance property
@@ -93,36 +114,18 @@ class MovementNode(Node):
     # Callbacks
     # ==================================================
 
-    def distance_callback(self, msg):
-        # Atomic float assignment — safe in Python's GIL
-        self._current_distance = msg.data
-
-    def obstacle_callback(self, msg):
-        self.obstacle_distance = msg.data
-        self.obstacle_last_update = self.get_clock().now()
-
     def move_command_callback(self, msg):
-        """Receives a move request (meters) from MissionNode over ROS topic."""
+        """Receives a Float32 move request (meters) from MissionNode."""
+
+        # Block movement until encoder is reset and confirmed
+        if not self._reset_confirmed:
+            self.get_logger().warn("Move command received but encoder not ready yet — ignored")
+            return
+
         meters = msg.data
 
         if self.moving:
             self.get_logger().warn("Received move command while already moving — ignored")
-            return
-
-        # FIX: Check obstacle sensor is alive before allowing movement
-        if not self._obstacle_sensor_alive():
-            self.get_logger().error(
-                "Move rejected: obstacle sensor not publishing. Check /obstacle_distance"
-            )
-            self.publish_done(success=False)
-            return
-
-        # FIX: Check obstacle sensor is clear before starting
-        if self.obstacle_distance < self.OBSTACLE_THRESHOLD:
-            self.get_logger().error(
-                "Move rejected: obstacle detected before starting"
-            )
-            self.publish_done(success=False)
             return
 
         # Safety clamp
@@ -142,7 +145,9 @@ class MovementNode(Node):
         self.moving = True
         self._move_start_time = self.get_clock().now()
 
-        self.get_logger().info(f"Moving {meters:.3f} m")
+        self.get_logger().info(
+            f"Moving {meters:.3f} m  (start distance: {self.start_distance:.3f} m)"
+        )
 
     # ==================================================
     # Control Loop
@@ -153,19 +158,6 @@ class MovementNode(Node):
         if not self.moving:
             return
 
-        # ---------------- Obstacle Sensor Watchdog ----------------
-        # FIX: If obstacle sensor goes silent mid-move, emergency stop
-        if not self._obstacle_sensor_alive():
-            self.get_logger().error("EMERGENCY STOP: Obstacle sensor timeout")
-            self.abort_motion(success=False)
-            return
-
-        # ---------------- Obstacle Safety ----------------
-        if self.obstacle_distance < self.OBSTACLE_THRESHOLD:
-            self.get_logger().warn("EMERGENCY STOP: Obstacle detected")
-            self.abort_motion(success=False)
-            return
-
         # ---------------- Total Distance Safety ----------------
         if self.current_distance >= self.MAX_TRAVEL_DISTANCE:
             self.get_logger().warn("STOP: Max planter distance reached")
@@ -173,7 +165,6 @@ class MovementNode(Node):
             return
 
         # ---------------- Timeout Check ----------------
-        # FIX: Abort if move is taking too long (sensor failure, wheel slip, etc.)
         elapsed = (self.get_clock().now() - self._move_start_time).nanoseconds / 1e9
         if elapsed > self.MOVE_TIMEOUT:
             self.get_logger().error(
@@ -187,12 +178,13 @@ class MovementNode(Node):
         error = self.target_delta - travelled
 
         if error <= self.distance_tolerance:
-            self.get_logger().info("Target distance reached")
+            self.get_logger().info(
+                f"Target reached — travelled: {travelled:.3f} m"
+            )
             self.abort_motion(success=True)
             return
 
         # ---------------- Ramped Speed (approach slowdown) ----------------
-        # FIX: Slow down when close to target to avoid overshoot
         speed = self._compute_speed(error)
         self.publish_velocity(speed)
 
@@ -200,22 +192,9 @@ class MovementNode(Node):
     # Helpers
     # ==================================================
 
-    def _obstacle_sensor_alive(self) -> bool:
-        """Returns True only if obstacle sensor has published recently."""
-        if self.obstacle_last_update is None:
-            return False
-        age = (self.get_clock().now() - self.obstacle_last_update).nanoseconds / 1e9
-        return age < self.OBSTACLE_WATCHDOG_TIMEOUT
-
     def _compute_speed(self, error: float) -> float:
-        """
-        Ramp speed down as the robot approaches the target.
-        Full speed outside SLOWDOWN_ZONE, linearly scaled down inside it.
-        """
         if error >= self.SLOWDOWN_ZONE:
             return self.linear_speed
-
-        # Linear interpolation between MIN_SPEED and linear_speed
         ratio = error / self.SLOWDOWN_ZONE
         speed = self.MIN_SPEED + ratio * (self.linear_speed - self.MIN_SPEED)
         return max(speed, self.MIN_SPEED)
@@ -237,6 +216,11 @@ class MovementNode(Node):
         msg.data = success
         self.done_pub.publish(msg)
         self.get_logger().info(f"Move done — success={success}")
+
+    def _publish_reset(self):
+        msg = Bool()
+        msg.data = True
+        self.reset_pub.publish(msg)
 
 
 # ======================================================

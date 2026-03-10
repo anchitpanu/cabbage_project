@@ -1,0 +1,25 @@
+-- ESP32
+One : ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyUSB1
+
+reset distance zero : ros2 topic pub --once /quin/reset_distance std_msgs/msg/Bool "data: true"
+
+
+web dashboard
+@pi 
+- T1: ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+- T2: ros2 run web_video_server web_video_server --ros-args -p port:=8081
+- T3: ros2 run usb_cam usb_cam_node_exe --ros-args \
+        -p video_device:=/dev/video0 \
+        -r __ns:=/camera1 \
+        -p image_width:=320 \
+        -p image_height:=240
+-T4: ros2 run usb_cam usb_cam_node_exe --ros-args \
+        -p video_device:=/dev/video2 \
+        -r __ns:=/camera2 \
+        -p image_width:=320 \
+        -p image_height:=240
+
+@pc
+- npm run dev
+- curl http://10.129.196.237:9090 (if can't connect)
+
