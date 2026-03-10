@@ -6,7 +6,7 @@ from enum import Enum, auto
 
 class State(Enum):
     IDLE        = auto()
-    ENTERING    = auto()    # waiting for EntryNavigation to finish
+    ENTERING    = auto()
     MOVING      = auto()
     PLANTING    = auto()
     DONE        = auto()
@@ -33,11 +33,11 @@ class MissionNode(Node):
         # ---------------- Timeout Settings ----------------
         self.PLANT_TIMEOUT  = 10.0
         self.MOVE_TIMEOUT   = 60.0
-        self.ENTRY_TIMEOUT  = 30.0   # seconds to wait for entry to complete
+        self.ENTRY_TIMEOUT  = 30.0
 
         self._plant_timer   = None
         self._move_timer    = None
-        self._entry_timer   = None   # watchdog for entry phase
+        self._entry_timer   = None
 
         # ---------------- Stale Message Guard ----------------
         self._expecting_move_done  = False
@@ -45,9 +45,10 @@ class MissionNode(Node):
         self._expecting_entry_done = False
 
         # ---------------- Publishers ----------------
+        # Sends Float32 distance (meters) to MovementNode
         self.move_cmd_pub = self.create_publisher(
             Float32,
-            '/quin/move_command',
+            '/quin/cmd_move',
             10
         )
 
@@ -63,7 +64,6 @@ class MissionNode(Node):
             10
         )
 
-        # Triggers EntryNavigation to start
         self.entry_trigger_pub = self.create_publisher(
             Bool,
             '/entry_start',
@@ -92,7 +92,6 @@ class MissionNode(Node):
             10
         )
 
-        # Receives completion signal from EntryNavigation
         self.create_subscription(
             Bool,
             '/entry_done',
@@ -100,7 +99,6 @@ class MissionNode(Node):
             10
         )
 
-        # Allows external node to restart the mission
         self.create_subscription(
             Bool,
             '/quin/mission_restart',
@@ -115,14 +113,8 @@ class MissionNode(Node):
     # ==================================================
 
     def mission_param_callback(self, msg):
-        """
-        Step 1: AprilTag parameters received.
-        Stores parameters then immediately triggers entry phase.
-        """
         if self.state not in (State.IDLE, State.DONE, State.ABORTED):
-            self.get_logger().warn(
-                "Parameter update ignored — mission is currently running"
-            )
+            self.get_logger().warn("Parameter update ignored — mission is currently running")
             return
 
         self.AB = msg.data[0] / 100.0
@@ -134,38 +126,26 @@ class MissionNode(Node):
             f"Parameters loaded → AB={self.AB:.3f} m  C={self.C:.3f} m  DE={self.DE:.3f} m"
         )
 
-        # Step 2: trigger entry phase before any movement/planting
-        self._start_entry_phase()
+        # self._start_entry_phase()  ← COMMENTED OUT
+
+        self.advance_mission()
 
     # ==================================================
     # Entry Phase
     # ==================================================
 
     def _start_entry_phase(self):
-        """
-        Step 2: Triggers EntryNavigation node to align and enter the planter.
-        Waits for /entry_done before starting the planting mission.
-        """
         self.get_logger().info("Triggering entry phase — waiting for /entry_done...")
         self.state = State.ENTERING
         self._expecting_entry_done = True
 
-        # Signal EntryNavigation to begin
         msg = Bool()
         msg.data = True
         self.entry_trigger_pub.publish(msg)
 
-        # Watchdog in case EntryNavigation never responds
-        self._entry_timer = self.create_timer(
-            self.ENTRY_TIMEOUT,
-            self._entry_timeout_cb
-        )
+        self._entry_timer = self.create_timer(self.ENTRY_TIMEOUT, self._entry_timeout_cb)
 
     def entry_done_callback(self, msg: Bool):
-        """
-        Step 3: Called when EntryNavigation completes.
-        If successful, starts the planting mission.
-        """
         if not self._expecting_entry_done:
             self.get_logger().warn("Stale /entry_done received — ignored")
             return
@@ -183,9 +163,7 @@ class MissionNode(Node):
         self.advance_mission()
 
     def _entry_timeout_cb(self):
-        self.get_logger().error(
-            f"TIMEOUT: No /entry_done received after {self.ENTRY_TIMEOUT}s"
-        )
+        self.get_logger().error(f"TIMEOUT: No /entry_done received after {self.ENTRY_TIMEOUT}s")
         self._cancel_timer(self._entry_timer)
         self._entry_timer = None
         self._expecting_entry_done = False
@@ -207,10 +185,10 @@ class MissionNode(Node):
             self.get_logger().warn("Restart ignored — no parameters loaded yet")
             return
 
-        self.get_logger().info("Mission restart — re-running entry phase")
+        self.get_logger().info("Mission restart")
         self._cancel_all_timers()
         self._reset_all_state()
-        self._start_entry_phase()
+        self.advance_mission()
 
     def _reset_all_state(self):
         self.state = State.IDLE
@@ -229,14 +207,12 @@ class MissionNode(Node):
 
     def advance_mission(self):
         """
-        Only called AFTER entry phase succeeds.
-
         Step 0  → Move AB (seed 1 position)
         Step 1  → Plant seed 1
         Step 2  → Move AB (seed 2 position)
         Step 3  → Plant seed 2
-        Step 4  → Move transition distance
-        Step 5+ → Cabbage loop: move DE (repeats CABBAGE_COUNT times)
+        Step 4  → Move transition distance (C + 0.30)
+        Step 5+ → Cabbage loop: move DE, repeats CABBAGE_COUNT times
         Final   → Mission complete
         """
         if not self.params_received:
@@ -260,9 +236,7 @@ class MissionNode(Node):
             self.do_plant(seed_number=2)
 
         elif step == 4:
-            extra_offset = 0.30
-            transition = self.C + extra_offset
-            self.send_move(transition)
+            self.send_move(self.C + 0.30)
 
         elif step >= 5:
             if self.cabbage_index < self.CABBAGE_COUNT:
@@ -271,7 +245,7 @@ class MissionNode(Node):
                 )
                 self.cabbage_index += 1
                 self.send_move(self.DE)
-                return
+                return  # do NOT increment mission_step in cabbage loop
 
             else:
                 self.state = State.DONE
@@ -294,10 +268,7 @@ class MissionNode(Node):
         self.move_cmd_pub.publish(msg)
         self.get_logger().info(f"Sent move command: {meters:.3f} m")
 
-        self._move_timer = self.create_timer(
-            self.MOVE_TIMEOUT,
-            self._move_timeout_cb
-        )
+        self._move_timer = self.create_timer(self.MOVE_TIMEOUT, self._move_timeout_cb)
 
     def move_done_callback(self, msg: Bool):
         if not self._expecting_move_done:
@@ -316,9 +287,7 @@ class MissionNode(Node):
         self.advance_mission()
 
     def _move_timeout_cb(self):
-        self.get_logger().error(
-            f"TIMEOUT: No /move_done received after {self.MOVE_TIMEOUT}s"
-        )
+        self.get_logger().error(f"TIMEOUT: No /move_done received after {self.MOVE_TIMEOUT}s")
         self._cancel_timer(self._move_timer)
         self._move_timer = None
         self._expecting_move_done = False
@@ -337,10 +306,7 @@ class MissionNode(Node):
         msg.data = True
         self.plant_pub.publish(msg)
 
-        self._plant_timer = self.create_timer(
-            self.PLANT_TIMEOUT,
-            self._plant_timeout_cb
-        )
+        self._plant_timer = self.create_timer(self.PLANT_TIMEOUT, self._plant_timeout_cb)
 
     def plant_done_callback(self, msg: Bool):
         if not self._expecting_plant_done:
@@ -359,9 +325,7 @@ class MissionNode(Node):
         self.advance_mission()
 
     def _plant_timeout_cb(self):
-        self.get_logger().error(
-            f"TIMEOUT: No /plant_done received after {self.PLANT_TIMEOUT}s"
-        )
+        self.get_logger().error(f"TIMEOUT: No /plant_done received after {self.PLANT_TIMEOUT}s")
         self._cancel_timer(self._plant_timer)
         self._plant_timer = None
         self._expecting_plant_done = False

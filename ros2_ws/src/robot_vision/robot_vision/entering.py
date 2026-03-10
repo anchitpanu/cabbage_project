@@ -36,10 +36,10 @@ class VisionNavNode(Node):
         torch.backends.quantized.engine = 'qnnpack'
 
         # load model
-        self.model = YOLO('/home/quin/cabbage_project/cab_model/best.pt')
+        self.model = YOLO('/home/quin/cabbage_project/entering_model/enterbest.pt')
 
         # camera
-        self.cap = cv2.VideoCapture(0)
+        self.cap = cv2.VideoCapture(1)
 
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)

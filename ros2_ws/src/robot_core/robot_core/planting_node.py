@@ -9,26 +9,26 @@ class PlantNode(Node):
         super().__init__('plant_node')
 
         # ---------- Plant sequence ----------
-        # self.sequence = [
-        #     5,  # stepper down
-        #     1,  # gripper open
-        #     6,  # stepper up
-        #     2,  # gripper close
-        #     3,  # feeder open
-        #     5,  # stepper down
-        #     1,  # gripper open
-        #     6,  # stepper up
-        #     2,  # gripper close
-        #     4   # feeder close
-        # ]
-
-        # test basic planting
         self.sequence = [
             5,  # stepper down
             1,  # gripper open
             6,  # stepper up
             2,  # gripper close
+            3,  # feeder open
+            5,  # stepper down
+            1,  # gripper open
+            6,  # stepper up
+            2,  # gripper close
+            4   # feeder close
         ]
+
+        # test basic planting
+        # self.sequence = [
+        #     5,  # stepper down
+        #     1,  # gripper open
+        #     6,  # stepper up
+        #     2,  # gripper close
+        # ]
 
         self.step_index = 0
         self.busy = False
