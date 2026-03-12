@@ -8,6 +8,7 @@ setup.py
 ../../../build/robot_bringup/robot_bringup.egg-info/top_level.txt
 ../../../build/robot_bringup/robot_bringup.egg-info/zip-safe
 launch/bringup.launch.py
+launch/micro-ros.launch.py
 launch/vision.launch.py
 resource/robot_bringup
 robot_bringup/__init__.py

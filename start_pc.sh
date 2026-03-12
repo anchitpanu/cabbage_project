@@ -25,7 +25,7 @@ source /opt/ros/jazzy/setup.bash
 source ~/plant/cabbage_project/ros2_ws/install/setup.bash
 export ROS_DOMAIN_ID=77
 export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-ros2 launch robot_vision vision_system.launch.py
+ros2 launch robot_bringup vision.launch.py
 exec bash
 "
 

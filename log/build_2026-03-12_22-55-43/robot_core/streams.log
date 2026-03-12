@@ -1,0 +1,29 @@
+[1.598s] Invoking command in '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_core': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com PYTHONPATH=/home/jorjeen/plant/cabbage_project/build/robot_core/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/jorjeen/plant/cabbage_project/install/robot_core/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../../build/robot_core build --build-base /home/jorjeen/plant/cabbage_project/build/robot_core/build install --record /home/jorjeen/plant/cabbage_project/build/robot_core/install.log --single-version-externally-managed install_data
+[1.793s] running egg_info
+[1.806s] writing ../../../build/robot_core/robot_core.egg-info/PKG-INFO
+[1.806s] writing dependency_links to ../../../build/robot_core/robot_core.egg-info/dependency_links.txt
+[1.807s] writing entry points to ../../../build/robot_core/robot_core.egg-info/entry_points.txt
+[1.807s] writing requirements to ../../../build/robot_core/robot_core.egg-info/requires.txt
+[1.807s] writing top-level names to ../../../build/robot_core/robot_core.egg-info/top_level.txt
+[1.834s] reading manifest file '../../../build/robot_core/robot_core.egg-info/SOURCES.txt'
+[1.834s] writing manifest file '../../../build/robot_core/robot_core.egg-info/SOURCES.txt'
+[1.834s] running build
+[1.834s] running build_py
+[1.834s] copying robot_core/mission_node.py -> /home/jorjeen/plant/cabbage_project/build/robot_core/build/lib/robot_core
+[1.835s] running install
+[1.839s] running install_lib
+[1.853s] copying /home/jorjeen/plant/cabbage_project/build/robot_core/build/lib/robot_core/mission_node.py -> /home/jorjeen/plant/cabbage_project/install/robot_core/lib/python3.12/site-packages/robot_core
+[1.853s] byte-compiling /home/jorjeen/plant/cabbage_project/install/robot_core/lib/python3.12/site-packages/robot_core/mission_node.py to mission_node.cpython-312.pyc
+[1.856s] running install_data
+[1.856s] running install_egg_info
+[1.871s] removing '/home/jorjeen/plant/cabbage_project/install/robot_core/lib/python3.12/site-packages/robot_core-0.0.0-py3.12.egg-info' (and everything under it)
+[1.872s] Copying ../../../build/robot_core/robot_core.egg-info to /home/jorjeen/plant/cabbage_project/install/robot_core/lib/python3.12/site-packages/robot_core-0.0.0-py3.12.egg-info
+[1.872s] running install_scripts
+[1.967s] Installing detection_node script to /home/jorjeen/plant/cabbage_project/install/robot_core/lib/robot_core
+[1.968s] Installing entry_controller script to /home/jorjeen/plant/cabbage_project/install/robot_core/lib/robot_core
+[1.968s] Installing mission_node script to /home/jorjeen/plant/cabbage_project/install/robot_core/lib/robot_core
+[1.968s] Installing movement_node script to /home/jorjeen/plant/cabbage_project/install/robot_core/lib/robot_core
+[1.968s] Installing movement_test_node script to /home/jorjeen/plant/cabbage_project/install/robot_core/lib/robot_core
+[1.969s] Installing planting_node script to /home/jorjeen/plant/cabbage_project/install/robot_core/lib/robot_core
+[1.969s] writing list of installed files to '/home/jorjeen/plant/cabbage_project/build/robot_core/install.log'
+[1.991s] Invoked command in '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_core' returned '0': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com PYTHONPATH=/home/jorjeen/plant/cabbage_project/build/robot_core/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/jorjeen/plant/cabbage_project/install/robot_core/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../../build/robot_core build --build-base /home/jorjeen/plant/cabbage_project/build/robot_core/build install --record /home/jorjeen/plant/cabbage_project/build/robot_core/install.log --single-version-externally-managed install_data

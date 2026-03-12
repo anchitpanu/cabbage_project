@@ -27,7 +27,7 @@ class EnterBox(Node):
 
         super().__init__('enter_box_node')
 
-        self.model = YOLO('/home/quin/cabbage_project/entering_model/enterbest.pt')
+        self.model = YOLO('/home/jorjeen/plant/cabbage_project/entering_model/enterbest.pt')
 
         self.bridge = CvBridge()
 

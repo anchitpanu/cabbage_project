@@ -1,7 +1,9 @@
+import os
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Int32MultiArray, Bool, Float32
+from std_msgs.msg import Int32MultiArray, Bool, Float32, String
 from enum import Enum, auto
+from datetime import datetime
 
 
 class State(Enum):
@@ -10,6 +12,7 @@ class State(Enum):
     RESETTING   = auto()   # waiting for encoder reset confirmation
     MOVING      = auto()
     PLANTING    = auto()
+    DETECTING   = auto()   # waiting for cabbage detection result
     DONE        = auto()
     ABORTED     = auto()
 
@@ -27,106 +30,97 @@ class MissionNode(Node):
 
         # ---------------- State Machine ----------------
         self.state = State.IDLE
-        self.mission_step = 0
-        self.cabbage_index = 0
-        self.CABBAGE_COUNT = 5
+        self.mission_step   = 0
+        self.cabbage_index  = 0
+
+        # ---------------- Cabbage Zone Distance Tracking ----------------
+        # Robot stops cabbage loop when cumulative distance >= 170 cm
+        self.CABBAGE_ZONE_MAX_CM   = 170.0
+        self.cabbage_cumulative_cm = 0.0
+
+        # ---------------- Cabbage Log ----------------
+        self.cabbage_log = []   # list of dicts: {index, size_cm, harvestable, status}
 
         # ---------------- Robot Ready Flag ----------------
-        self._robot_ready = False   # True after encoder reset confirmed by movement_node
+        self._robot_ready = False
 
         # ---------------- Timeout Settings ----------------
-        self.PLANT_TIMEOUT  = 10.0
-        self.MOVE_TIMEOUT   = 60.0
-        self.ENTRY_TIMEOUT  = 30.0
-        self.RESET_TIMEOUT  = 10.0
+        self.PLANT_TIMEOUT   = 10.0
+        self.MOVE_TIMEOUT    = 60.0
+        self.ENTRY_TIMEOUT   = 60.0
+        self.RESET_TIMEOUT   = 10.0
+        self.DETECT_TIMEOUT  = 15.0
 
-        self._plant_timer   = None
-        self._move_timer    = None
-        self._entry_timer   = None
-        self._reset_timer   = None
+        self._plant_timer    = None
+        self._move_timer     = None
+        self._entry_timer    = None
+        self._reset_timer    = None
+        self._detect_timer   = None
 
-        # ---------------- Stale Message Guard ----------------
-        self._expecting_move_done  = False
-        self._expecting_plant_done = False
-        self._expecting_entry_done = False
-        self._expecting_robot_ready = False
+        # ---------------- Stale Message Guards ----------------
+        self._expecting_move_done    = False
+        self._expecting_plant_done   = False
+        self._expecting_entry_done   = False
+        self._expecting_robot_ready  = False
+        self._expecting_detect_done  = False
 
         # ---------------- Publishers ----------------
-        # Sends Float32 distance (meters) to MovementNode
         self.move_cmd_pub = self.create_publisher(
-            Float32,
-            '/quin/cmd_move',
-            10
-        )
+            Float32, '/quin/cmd_move', 10)
 
         self.plant_pub = self.create_publisher(
-            Bool,
-            '/plant_cmd',
-            10
-        )
+            Bool, '/plant_cmd', 10)
 
         self.mission_status_pub = self.create_publisher(
-            Bool,
-            '/quin/mission_status',
-            10
-        )
+            Bool, '/quin/mission_status', 10)
 
         self.entry_trigger_pub = self.create_publisher(
-            Bool,
-            '/entry_start',
-            10
-        )
+            Bool, '/entry_start', 10)
 
-        # Triggers encoder reset in MovementNode
         self.reset_trigger_pub = self.create_publisher(
-            Bool,
-            '/quin/trigger_reset',
-            10
-        )
+            Bool, '/quin/trigger_reset', 10)
+
+        # Tells cabbage_detector to run one detection scan
+        self.detect_trigger_pub = self.create_publisher(
+            Bool, '/quin/detect_trigger', 10)
+
+        # Publishes latest cabbage log as JSON string for dashboard
+        self.cabbage_log_pub = self.create_publisher(
+            String, '/quin/cabbage_log', 10)
 
         # ---------------- Subscribers ----------------
         self.create_subscription(
-            Int32MultiArray,
-            '/mission_params',
-            self.mission_param_callback,
-            10
-        )
+            Int32MultiArray, '/mission_params',
+            self.mission_param_callback, 10)
 
         self.create_subscription(
-            Bool,
-            '/quin/move_done',
-            self.move_done_callback,
-            10
-        )
+            Bool, '/quin/move_done',
+            self.move_done_callback, 10)
 
         self.create_subscription(
-            Bool,
-            '/plant_done',
-            self.plant_done_callback,
-            10
-        )
+            Bool, '/plant_done',
+            self.plant_done_callback, 10)
 
         self.create_subscription(
-            Bool,
-            '/entry_done',
-            self.entry_done_callback,
-            10
-        )
+            Bool, '/entry_done',
+            self.entry_done_callback, 10)
 
         self.create_subscription(
-            Bool,
-            '/quin/mission_restart',
-            self.mission_restart_callback,
-            10
-        )
+            Bool, '/quin/mission_restart',
+            self.mission_restart_callback, 10)
 
-        # Receives confirmation that encoder is reset and robot is ready
         self.create_subscription(
-            Bool,
-            '/quin/robot_ready',
-            self.robot_ready_callback,
-            10
-        )
+            Bool, '/quin/robot_ready',
+            self.robot_ready_callback, 10)
+
+        # Receives detection result from cabbage_detector
+        # String format: "size_cm,harvestable"
+        #   e.g. "12.4,0"  → 12.4 cm, not harvestable
+        #        "18.7,1"  → 18.7 cm, harvestable
+        #        "0.0,-1"  → not detected
+        self.create_subscription(
+            String, '/quin/detect_result',
+            self.detect_result_callback, 10)
 
         self.get_logger().info("Mission Node Ready — waiting for AprilTag parameters...")
 
@@ -148,18 +142,59 @@ class MissionNode(Node):
             f"Parameters loaded → AB={self.AB:.3f} m  C={self.C:.3f} m  DE={self.DE:.3f} m"
         )
 
-        # Trigger encoder reset — mission will start only after robot_ready received
-        self._trigger_reset()
+        # After params received → enter planting box first
+        self._start_entry_phase()
 
     # ==================================================
-    # Encoder Reset — triggered after params received (or after entry phase later)
+    # Entry Phase
+    # ==================================================
+
+    def _start_entry_phase(self):
+        self.get_logger().info("Triggering entry phase — waiting for /entry_done...")
+        self.state = State.ENTERING
+        self._expecting_entry_done = True
+
+        msg = Bool()
+        msg.data = True
+        self.entry_trigger_pub.publish(msg)
+
+        self._entry_timer = self.create_timer(self.ENTRY_TIMEOUT, self._entry_timeout_cb)
+
+    def entry_done_callback(self, msg: Bool):
+        if not self._expecting_entry_done:
+            self.get_logger().warn("Stale /entry_done received — ignored")
+            return
+
+        self._expecting_entry_done = False
+        self._cancel_timer(self._entry_timer)
+        self._entry_timer = None
+
+        if not msg.data:
+            self._abort("Entry phase failed")
+            return
+
+        self.get_logger().info("Entry complete — triggering encoder reset before mission")
+        self._trigger_reset()
+
+    def _entry_timeout_cb(self):
+        self.get_logger().error(f"TIMEOUT: No /entry_done received after {self.ENTRY_TIMEOUT}s")
+        self._cancel_timer(self._entry_timer)
+        self._entry_timer = None
+        self._expecting_entry_done = False
+        self._abort("Entry phase timeout")
+
+    # ==================================================
+    # Encoder Reset
     # ==================================================
 
     def _trigger_reset(self):
         self.get_logger().info("Triggering encoder reset — waiting for confirmation...")
         self.state = State.RESETTING
-        self._robot_ready = False
-        self._expecting_robot_ready = True
+        self._robot_ready            = False
+        self._expecting_robot_ready  = True
+        self._expecting_plant_done   = False
+        self._expecting_move_done    = False
+        self._expecting_detect_done  = False
 
         msg = Bool()
         msg.data = True
@@ -192,45 +227,6 @@ class MissionNode(Node):
         self._abort("Encoder reset timeout")
 
     # ==================================================
-    # Entry Phase (not used in current test — uncomment when ready)
-    # ==================================================
-
-    def _start_entry_phase(self):
-        self.get_logger().info("Triggering entry phase — waiting for /entry_done...")
-        self.state = State.ENTERING
-        self._expecting_entry_done = True
-
-        msg = Bool()
-        msg.data = True
-        self.entry_trigger_pub.publish(msg)
-
-        self._entry_timer = self.create_timer(self.ENTRY_TIMEOUT, self._entry_timeout_cb)
-
-    def entry_done_callback(self, msg: Bool):
-        if not self._expecting_entry_done:
-            self.get_logger().warn("Stale /entry_done received — ignored")
-            return
-
-        self._expecting_entry_done = False
-        self._cancel_timer(self._entry_timer)
-        self._entry_timer = None
-
-        if not msg.data:
-            self._abort("Entry phase failed")
-            return
-
-        self.get_logger().info("Entry complete — triggering encoder reset before mission")
-        # After entry, reset encoder then start mission
-        self._trigger_reset()
-
-    def _entry_timeout_cb(self):
-        self.get_logger().error(f"TIMEOUT: No /entry_done received after {self.ENTRY_TIMEOUT}s")
-        self._cancel_timer(self._entry_timer)
-        self._entry_timer = None
-        self._expecting_entry_done = False
-        self._abort("Entry phase timeout")
-
-    # ==================================================
     # Mission Restart
     # ==================================================
 
@@ -238,7 +234,8 @@ class MissionNode(Node):
         if not msg.data:
             return
 
-        if self.state in (State.MOVING, State.PLANTING, State.ENTERING, State.RESETTING):
+        if self.state in (State.MOVING, State.PLANTING, State.ENTERING,
+                          State.RESETTING, State.DETECTING):
             self.get_logger().warn("Restart ignored — mission is currently running")
             return
 
@@ -246,23 +243,26 @@ class MissionNode(Node):
             self.get_logger().warn("Restart ignored — no parameters loaded yet")
             return
 
-        self.get_logger().info("Mission restart — triggering encoder reset")
+        self.get_logger().info("Mission restart — re-entering planting box")
         self._cancel_all_timers()
         self._reset_all_state()
-        self._trigger_reset()
+        self._start_entry_phase()
 
     def _reset_all_state(self):
         self.state = State.IDLE
         self._reset_mission_steps()
-        self._robot_ready = False
-        self._expecting_move_done  = False
-        self._expecting_plant_done = False
-        self._expecting_entry_done = False
-        self._expecting_robot_ready = False
+        self._robot_ready            = False
+        self._expecting_move_done    = False
+        self._expecting_plant_done   = False
+        self._expecting_entry_done   = False
+        self._expecting_robot_ready  = False
+        self._expecting_detect_done  = False
 
     def _reset_mission_steps(self):
-        self.mission_step  = 0
-        self.cabbage_index = 0
+        self.mission_step          = 0
+        self.cabbage_index         = 0
+        self.cabbage_cumulative_cm = 0.0
+        self.cabbage_log           = []
 
     # ==================================================
     # State Machine — Advance
@@ -270,21 +270,21 @@ class MissionNode(Node):
 
     def advance_mission(self):
         """
-        Step 0  → Move AB (seed 1 position)
+        Step 0  → Move AB  (seed 1 approach)
         Step 1  → Plant seed 1
-        Step 2  → Move AB (seed 2 position)
+        Step 2  → Move AB  (seed 2 approach)
         Step 3  → Plant seed 2
-        Step 4  → Move transition distance (C + 0.30)
-        Step 5+ → Cabbage loop: move DE, repeats CABBAGE_COUNT times
-        Final   → Mission complete
+        Step 4  → Move C + 0.30  (transition to cabbage zone)
+        Step 5+ → Cabbage loop:
+                    DETECT → log size/harvestable → Move DE
+                    Repeat until cumulative distance >= 170 cm
+        Final   → Save log file → Mission complete
         """
         if not self.params_received:
-            self.get_logger().error("Cannot advance — parameters not loaded")
             self._abort("Parameters missing")
             return
 
         if not self._robot_ready:
-            self.get_logger().error("Cannot advance — robot not ready (encoder not reset)")
             self._abort("Robot not ready")
             return
 
@@ -292,36 +292,40 @@ class MissionNode(Node):
         self.get_logger().info(f"Mission step {step}")
 
         if step == 0:
+            self.mission_step += 1
             self.send_move(self.AB)
 
         elif step == 1:
+            self.mission_step += 1
             self.do_plant(seed_number=1)
 
         elif step == 2:
+            self.mission_step += 1
             self.send_move(self.AB)
 
         elif step == 3:
+            self.mission_step += 1
             self.do_plant(seed_number=2)
 
         elif step == 4:
+            self.mission_step += 1
             self.send_move(self.C + 0.30)
 
         elif step >= 5:
-            if self.cabbage_index < self.CABBAGE_COUNT:
-                self.get_logger().info(
-                    f"Cabbage interval {self.cabbage_index + 1}/{self.CABBAGE_COUNT}"
-                )
+            # ---- Cabbage loop: detect first, move after result ----
+            if self.cabbage_cumulative_cm < self.CABBAGE_ZONE_MAX_CM:
                 self.cabbage_index += 1
-                self.send_move(self.DE)
-                return  # do NOT increment mission_step in cabbage loop
-
+                self.get_logger().info(
+                    f"Cabbage {self.cabbage_index} — "
+                    f"cumulative {self.cabbage_cumulative_cm:.1f} / {self.CABBAGE_ZONE_MAX_CM} cm"
+                )
+                self.do_detect()
             else:
+                # ---- End of cabbage zone ----
+                self._save_log_file()
                 self.state = State.DONE
                 self.get_logger().info("Mission Complete")
                 self._publish_mission_status(success=True)
-                return
-
-        self.mission_step += 1
 
     # ==================================================
     # Movement
@@ -352,6 +356,15 @@ class MissionNode(Node):
             return
 
         self.get_logger().info("Move confirmed done")
+
+        # Track cumulative distance only while in cabbage zone (step >= 5)
+        if self.mission_step >= 5:
+            self.cabbage_cumulative_cm += self.DE * 100.0
+            self.get_logger().info(
+                f"Cabbage zone distance: {self.cabbage_cumulative_cm:.1f} / "
+                f"{self.CABBAGE_ZONE_MAX_CM} cm"
+            )
+
         self.advance_mission()
 
     def _move_timeout_cb(self):
@@ -400,6 +413,139 @@ class MissionNode(Node):
         self._abort("Planting timeout")
 
     # ==================================================
+    # Cabbage Detection
+    # ==================================================
+
+    def do_detect(self):
+        """Trigger cabbage_detector to run one scan and wait for result."""
+        self.state = State.DETECTING
+        self._expecting_detect_done = True
+
+        self.get_logger().info(f"Triggering cabbage detection #{self.cabbage_index}...")
+        msg = Bool()
+        msg.data = True
+        self.detect_trigger_pub.publish(msg)
+
+        self._detect_timer = self.create_timer(self.DETECT_TIMEOUT, self._detect_timeout_cb)
+
+    def detect_result_callback(self, msg: String):
+        """
+        Receives result from cabbage_detector node.
+        Expected format: "size_cm,harvestable"
+          "12.4,0"  → 12.4 cm, not harvestable
+          "18.7,1"  → 18.7 cm, harvestable
+          "0.0,-1"  → not detected
+        """
+        if not self._expecting_detect_done:
+            self.get_logger().warn("Stale /quin/detect_result received — ignored")
+            return
+
+        self._expecting_detect_done = False
+        self._cancel_timer(self._detect_timer)
+        self._detect_timer = None
+
+        try:
+            parts       = msg.data.split(',')
+            size_cm     = float(parts[0])
+            harvestable = int(parts[1])
+        except Exception:
+            self.get_logger().error(f"Bad detect_result format: '{msg.data}' — skipping")
+            size_cm     = 0.0
+            harvestable = -1
+
+        if harvestable == 1:
+            status_str = "Harvestable"
+        elif harvestable == 0:
+            status_str = "Not harvestable"
+        else:
+            status_str = "Not detected"
+
+        entry = {
+            'index':       self.cabbage_index,
+            'size_cm':     round(size_cm, 1),
+            'harvestable': harvestable,
+            'status':      status_str,
+        }
+        self.cabbage_log.append(entry)
+
+        self.get_logger().info(
+            f"Cabbage {self.cabbage_index}: {size_cm:.1f} cm — {status_str}"
+        )
+
+        # Push updated log to dashboard
+        self._publish_cabbage_log()
+
+        # After detection → move DE to next cabbage
+        self.send_move(self.DE)
+
+    def _detect_timeout_cb(self):
+        self.get_logger().error(
+            f"TIMEOUT: No /quin/detect_result received after {self.DETECT_TIMEOUT}s"
+        )
+        self._cancel_timer(self._detect_timer)
+        self._detect_timer = None
+        self._expecting_detect_done = False
+
+        # Log as not detected and continue — don't abort the whole mission
+        entry = {
+            'index':       self.cabbage_index,
+            'size_cm':     0.0,
+            'harvestable': -1,
+            'status':      'Timeout — not detected',
+        }
+        self.cabbage_log.append(entry)
+        self.get_logger().warn(
+            f"Cabbage {self.cabbage_index} timed out — logged as not detected, continuing"
+        )
+        self._publish_cabbage_log()
+        self.send_move(self.DE)
+
+    # ==================================================
+    # Cabbage Log — Publish to Dashboard
+    # ==================================================
+
+    def _publish_cabbage_log(self):
+        import json
+        msg      = String()
+        msg.data = json.dumps(self.cabbage_log)
+        self.cabbage_log_pub.publish(msg)
+
+    # ==================================================
+    # Cabbage Log — Save to File
+    # ==================================================
+
+    def _save_log_file(self):
+        timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        filename  = f'/home/quin/cabbage_project/logs/mission_{timestamp}.txt'
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+
+        harvestable_count = sum(1 for e in self.cabbage_log if e['harvestable'] == 1)
+        not_ready_count   = sum(1 for e in self.cabbage_log if e['harvestable'] == 0)
+        no_detect_count   = sum(1 for e in self.cabbage_log if e['harvestable'] == -1)
+
+        lines = [
+            f"Mission Log — {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            f"Parameters  — AB={self.AB:.3f} m  C={self.C:.3f} m  DE={self.DE:.3f} m",
+            "=" * 50,
+        ]
+        for e in self.cabbage_log:
+            lines.append(
+                f"Cabbage {e['index']:>2}:  {e['size_cm']:>5.1f} cm  —  {e['status']}"
+            )
+        lines += [
+            "=" * 50,
+            f"Total scanned  : {len(self.cabbage_log)}",
+            f"Harvestable    : {harvestable_count}",
+            f"Not ready      : {not_ready_count}",
+            f"Not detected   : {no_detect_count}",
+        ]
+
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(lines) + '\n')
+
+        self.get_logger().info(f"Log saved → {filename}")
+
+    # ==================================================
     # Abort
     # ==================================================
 
@@ -407,10 +553,17 @@ class MissionNode(Node):
         self.get_logger().error(f"Mission ABORTED — reason: {reason}")
         self.state = State.ABORTED
         self._cancel_all_timers()
-        self._expecting_move_done   = False
-        self._expecting_plant_done  = False
-        self._expecting_entry_done  = False
-        self._expecting_robot_ready = False
+        self._expecting_move_done    = False
+        self._expecting_plant_done   = False
+        self._expecting_entry_done   = False
+        self._expecting_robot_ready  = False
+        self._expecting_detect_done  = False
+
+        # Save partial log if any cabbages were already scanned
+        if self.cabbage_log:
+            self.get_logger().info("Saving partial cabbage log before abort...")
+            self._save_log_file()
+
         self._publish_mission_status(success=False)
 
     # ==================================================
@@ -426,10 +579,12 @@ class MissionNode(Node):
         self._cancel_timer(self._move_timer)
         self._cancel_timer(self._entry_timer)
         self._cancel_timer(self._reset_timer)
-        self._plant_timer  = None
-        self._move_timer   = None
-        self._entry_timer  = None
-        self._reset_timer  = None
+        self._cancel_timer(self._detect_timer)
+        self._plant_timer   = None
+        self._move_timer    = None
+        self._entry_timer   = None
+        self._reset_timer   = None
+        self._detect_timer  = None
 
     def _publish_mission_status(self, success: bool):
         msg = Bool()
