@@ -7,12 +7,10 @@ One : ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyUSB1
 reset distance zero : ros2 topic pub --once /quin/reset_distance std_msgs/msg/Bool "data: true"
 
 
-<<<<<<< HEAD
--- web dashboard
-=======
+
 
 web dashboard
->>>>>>> aa6b81a (edited dashboard and add command)
+
 @pi 
 - T1: ros2 launch rosbridge_server rosbridge_websocket_launch.xml
 - T2: ros2 run web_video_server web_video_server --ros-args -p port:=8081
