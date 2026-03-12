@@ -35,6 +35,8 @@ web dashboard
 - npm run dev (~/cabbage_project/agribot-dashboard)
         *** - pkill -f "next dev" 
 - curl http://10.129.196.237:9090 (if can't connect)
+
+- http://localhost:3000 (browser)
  
 
 
