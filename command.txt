@@ -1,3 +1,6 @@
+pi-ip : 10.129.196.237
+
+
 -- ESP32
 One : ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyUSB1
 
@@ -28,6 +31,18 @@ web dashboard
 **top camera
 
 @pc
-- npm run dev
+- npm run dev (~/cabbage_project/agribot-dashboard)
 - curl http://10.129.196.237:9090 (if can't connect)
 
+
+full system running
+@pi
+- camera
+- rosbridge_server
+- web_video_server
+- micro_ros_agent
+- bringup
+
+@pc
+- npm
+- apriltag
