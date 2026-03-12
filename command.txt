@@ -23,6 +23,7 @@ web dashboard
         -p image_width:=320 \
         -p image_height:=240
 **front camera
+
 -T4: ros2 run usb_cam usb_cam_node_exe --ros-args \
         -p video_device:=/dev/video2 \
         -r __ns:=/camera2 \
@@ -32,7 +33,9 @@ web dashboard
 
 @pc
 - npm run dev (~/cabbage_project/agribot-dashboard)
+        *** - pkill -f "next dev" 
 - curl http://10.129.196.237:9090 (if can't connect)
+ 
 
 
 full system running
