@@ -52,7 +52,7 @@ class MovementNode(Node):
             10
         )
 
-        # FIX: publishes True when encoder is reset and robot is ready to move
+        # Publishes True when encoder is reset and robot is ready to move
         self.ready_pub = self.create_publisher(
             Bool,
             '/quin/robot_ready',
@@ -78,40 +78,60 @@ class MovementNode(Node):
             10
         )
 
+        # Receives manual reset trigger from MissionNode
+        self.create_subscription(
+            Bool,
+            '/quin/trigger_reset',
+            self.trigger_reset_callback,
+            10
+        )
+
         # ---------------- Timers ----------------
         self.timer = self.create_timer(0.05, self.control_loop)
 
         self.get_logger().info("Movement Node Ready — waiting for Arduino...")
 
     # ==================================================
-    # Distance Callback — reset happens here on first message
+    # Distance Callback
     # ==================================================
 
     def distance_callback(self, msg):
         self._current_distance = msg.data
 
-        # First message received — Arduino is now connected, send reset
+        # First message received — Arduino is now connected
         if not self._arduino_ready:
             self._arduino_ready = True
             self.get_logger().info(
-                f"Arduino connected — distance was {msg.data:.3f} m, sending reset..."
+                f"Arduino connected — distance is {msg.data:.3f} m (waiting for mission reset trigger)"
             )
-            self._publish_reset()
-            return
+            return  # Do NOT reset here — wait for mission_node to trigger it
 
-        # Keep sending reset until distance confirms ~0
+        # If a reset was triggered, keep sending reset until encoder confirms ~0
         if not self._reset_confirmed:
             if abs(self._current_distance) < 0.01:
                 self._reset_confirmed = True
                 self.get_logger().info("Encoder reset confirmed — robot is ready!")
 
-                # FIX: notify MissionNode that robot is ready to move
+                # Notify MissionNode that robot is ready to move
                 ready_msg = Bool()
                 ready_msg.data = True
                 self.ready_pub.publish(ready_msg)
             else:
                 # Still not 0, keep sending reset
                 self._publish_reset()
+
+    # ==================================================
+    # Manual Reset Trigger (called by MissionNode after params received)
+    # ==================================================
+
+    def trigger_reset_callback(self, msg: Bool):
+        if msg.data:
+            if self.moving:
+                self.get_logger().warn("Reset trigger ignored — robot is currently moving")
+                return
+            self._reset_confirmed = False
+            self._publish_reset()
+            self.get_logger().info("Reset triggered by mission — waiting for encoder to confirm 0...")
 
     # ==================================================
     # Thread-safe distance property
@@ -122,7 +142,7 @@ class MovementNode(Node):
         return self._current_distance
 
     # ==================================================
-    # Callbacks
+    # Move Command Callback
     # ==================================================
 
     def move_command_callback(self, msg):
@@ -132,13 +152,13 @@ class MovementNode(Node):
             self.get_logger().warn("Move command received but encoder not ready yet — ignored")
             return
 
-        meters = msg.data
-
         if self.moving:
             self.get_logger().warn("Received move command while already moving — ignored")
             return
 
-        # Safety clamp
+        meters = msg.data
+
+        # Safety clamp — uses absolute position to enforce total distance limit
         if self.current_distance + meters > self.MAX_TRAVEL_DISTANCE:
             meters = self.MAX_TRAVEL_DISTANCE - self.current_distance
             self.get_logger().warn(
@@ -150,6 +170,7 @@ class MovementNode(Node):
             self.publish_done(success=True)
             return
 
+        # Snapshot absolute position — travelled is calculated relative to this
         self.start_distance = self.current_distance
         self.target_delta = meters
         self.moving = True
@@ -184,6 +205,7 @@ class MovementNode(Node):
             return
 
         # ---------------- Target Check ----------------
+        # travelled = relative distance for THIS move only
         travelled = self.current_distance - self.start_distance
         error = self.target_delta - travelled
 

@@ -7,6 +7,7 @@ from enum import Enum, auto
 class State(Enum):
     IDLE        = auto()
     ENTERING    = auto()
+    RESETTING   = auto()   # waiting for encoder reset confirmation
     MOVING      = auto()
     PLANTING    = auto()
     DONE        = auto()
@@ -30,19 +31,25 @@ class MissionNode(Node):
         self.cabbage_index = 0
         self.CABBAGE_COUNT = 5
 
+        # ---------------- Robot Ready Flag ----------------
+        self._robot_ready = False   # True after encoder reset confirmed by movement_node
+
         # ---------------- Timeout Settings ----------------
         self.PLANT_TIMEOUT  = 10.0
         self.MOVE_TIMEOUT   = 60.0
         self.ENTRY_TIMEOUT  = 30.0
+        self.RESET_TIMEOUT  = 10.0
 
         self._plant_timer   = None
         self._move_timer    = None
         self._entry_timer   = None
+        self._reset_timer   = None
 
         # ---------------- Stale Message Guard ----------------
         self._expecting_move_done  = False
         self._expecting_plant_done = False
         self._expecting_entry_done = False
+        self._expecting_robot_ready = False
 
         # ---------------- Publishers ----------------
         # Sends Float32 distance (meters) to MovementNode
@@ -67,6 +74,13 @@ class MissionNode(Node):
         self.entry_trigger_pub = self.create_publisher(
             Bool,
             '/entry_start',
+            10
+        )
+
+        # Triggers encoder reset in MovementNode
+        self.reset_trigger_pub = self.create_publisher(
+            Bool,
+            '/quin/trigger_reset',
             10
         )
 
@@ -106,6 +120,14 @@ class MissionNode(Node):
             10
         )
 
+        # Receives confirmation that encoder is reset and robot is ready
+        self.create_subscription(
+            Bool,
+            '/quin/robot_ready',
+            self.robot_ready_callback,
+            10
+        )
+
         self.get_logger().info("Mission Node Ready — waiting for AprilTag parameters...")
 
     # ==================================================
@@ -126,12 +148,51 @@ class MissionNode(Node):
             f"Parameters loaded → AB={self.AB:.3f} m  C={self.C:.3f} m  DE={self.DE:.3f} m"
         )
 
-        # self._start_entry_phase()  ← COMMENTED OUT
-
-        self.advance_mission()
+        # Trigger encoder reset — mission will start only after robot_ready received
+        self._trigger_reset()
 
     # ==================================================
-    # Entry Phase
+    # Encoder Reset — triggered after params received (or after entry phase later)
+    # ==================================================
+
+    def _trigger_reset(self):
+        self.get_logger().info("Triggering encoder reset — waiting for confirmation...")
+        self.state = State.RESETTING
+        self._robot_ready = False
+        self._expecting_robot_ready = True
+
+        msg = Bool()
+        msg.data = True
+        self.reset_trigger_pub.publish(msg)
+
+        self._reset_timer = self.create_timer(self.RESET_TIMEOUT, self._reset_timeout_cb)
+
+    def robot_ready_callback(self, msg: Bool):
+        if not self._expecting_robot_ready:
+            self.get_logger().warn("Stale /quin/robot_ready received — ignored")
+            return
+
+        if not msg.data:
+            return
+
+        self._expecting_robot_ready = False
+        self._cancel_timer(self._reset_timer)
+        self._reset_timer = None
+
+        self._robot_ready = True
+        self.get_logger().info("Robot ready — encoder confirmed reset, starting mission")
+        self._reset_mission_steps()
+        self.advance_mission()
+
+    def _reset_timeout_cb(self):
+        self.get_logger().error(f"TIMEOUT: No /quin/robot_ready received after {self.RESET_TIMEOUT}s")
+        self._cancel_timer(self._reset_timer)
+        self._reset_timer = None
+        self._expecting_robot_ready = False
+        self._abort("Encoder reset timeout")
+
+    # ==================================================
+    # Entry Phase (not used in current test — uncomment when ready)
     # ==================================================
 
     def _start_entry_phase(self):
@@ -158,9 +219,9 @@ class MissionNode(Node):
             self._abort("Entry phase failed")
             return
 
-        self.get_logger().info("Entry complete — starting planting mission")
-        self._reset_mission_steps()
-        self.advance_mission()
+        self.get_logger().info("Entry complete — triggering encoder reset before mission")
+        # After entry, reset encoder then start mission
+        self._trigger_reset()
 
     def _entry_timeout_cb(self):
         self.get_logger().error(f"TIMEOUT: No /entry_done received after {self.ENTRY_TIMEOUT}s")
@@ -177,7 +238,7 @@ class MissionNode(Node):
         if not msg.data:
             return
 
-        if self.state in (State.MOVING, State.PLANTING, State.ENTERING):
+        if self.state in (State.MOVING, State.PLANTING, State.ENTERING, State.RESETTING):
             self.get_logger().warn("Restart ignored — mission is currently running")
             return
 
@@ -185,17 +246,19 @@ class MissionNode(Node):
             self.get_logger().warn("Restart ignored — no parameters loaded yet")
             return
 
-        self.get_logger().info("Mission restart")
+        self.get_logger().info("Mission restart — triggering encoder reset")
         self._cancel_all_timers()
         self._reset_all_state()
-        self.advance_mission()
+        self._trigger_reset()
 
     def _reset_all_state(self):
         self.state = State.IDLE
         self._reset_mission_steps()
+        self._robot_ready = False
         self._expecting_move_done  = False
         self._expecting_plant_done = False
         self._expecting_entry_done = False
+        self._expecting_robot_ready = False
 
     def _reset_mission_steps(self):
         self.mission_step  = 0
@@ -218,6 +281,11 @@ class MissionNode(Node):
         if not self.params_received:
             self.get_logger().error("Cannot advance — parameters not loaded")
             self._abort("Parameters missing")
+            return
+
+        if not self._robot_ready:
+            self.get_logger().error("Cannot advance — robot not ready (encoder not reset)")
+            self._abort("Robot not ready")
             return
 
         step = self.mission_step
@@ -249,7 +317,7 @@ class MissionNode(Node):
 
             else:
                 self.state = State.DONE
-                self.get_logger().info("✓ Mission Complete")
+                self.get_logger().info("Mission Complete")
                 self._publish_mission_status(success=True)
                 return
 
@@ -339,9 +407,10 @@ class MissionNode(Node):
         self.get_logger().error(f"Mission ABORTED — reason: {reason}")
         self.state = State.ABORTED
         self._cancel_all_timers()
-        self._expecting_move_done  = False
-        self._expecting_plant_done = False
-        self._expecting_entry_done = False
+        self._expecting_move_done   = False
+        self._expecting_plant_done  = False
+        self._expecting_entry_done  = False
+        self._expecting_robot_ready = False
         self._publish_mission_status(success=False)
 
     # ==================================================
@@ -356,9 +425,11 @@ class MissionNode(Node):
         self._cancel_timer(self._plant_timer)
         self._cancel_timer(self._move_timer)
         self._cancel_timer(self._entry_timer)
+        self._cancel_timer(self._reset_timer)
         self._plant_timer  = None
         self._move_timer   = None
         self._entry_timer  = None
+        self._reset_timer  = None
 
     def _publish_mission_status(self, success: bool):
         msg = Bool()
