@@ -21,7 +21,7 @@ class EnterBox(Node):
 
         self.subscription = self.create_subscription(
             Image,
-            '/camera1/image_raw',
+            '/camera1/image_raw/compressed',
             self.image_callback,
             1)
 

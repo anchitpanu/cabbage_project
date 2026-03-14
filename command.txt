@@ -1,14 +1,13 @@
-pi-ip : 10.129.196.237
+pi-ip : 10.129.196.237  -- earn's hotspot
+        172.20.10.2     -- jeen's hotspot
 
 
 -- ESP32
 One : ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyUSB1
 
 
-
 -- manually reset distance
 reset distance zero : ros2 topic pub --once /quin/reset_distance std_msgs/msg/Bool "data: true"
-
 
 
 
@@ -17,19 +16,22 @@ web dashboard
 @pi 
 - T1: ros2 launch rosbridge_server rosbridge_websocket_launch.xml
 - T2: ros2 run web_video_server web_video_server --ros-args -p port:=8081
+
+**front camera
 - T3: ros2 run usb_cam usb_cam_node_exe --ros-args \
         -p video_device:=/dev/video0 \
         -r __ns:=/camera1 \
         -p image_width:=320 \
-        -p image_height:=240
-**front camera
+        -p image_height:=240 \
+        -p framerate:=10
 
+**top camera
 -T4: ros2 run usb_cam usb_cam_node_exe --ros-args \
         -p video_device:=/dev/video2 \
         -r __ns:=/camera2 \
         -p image_width:=320 \
         -p image_height:=240
-**top camera
+
 
 @pc
 - npm run dev (~/cabbage_project/agribot-dashboard)
@@ -38,6 +40,15 @@ web dashboard
 
 - http://localhost:3000 (browser)
  
+ 
+
+clean pi
+- rm -rf /dev/shm/fastrtps*
+- pkill -f ros
+- sudo systemctl restart systemd-logind
+
+
+
 
 
 full system running
@@ -49,5 +60,10 @@ full system running
 - bringup
 
 @pc
-- npm
+- npm   
 - apriltag
+
+
+
+
+

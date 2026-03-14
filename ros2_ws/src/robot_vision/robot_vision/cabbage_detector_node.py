@@ -41,7 +41,7 @@ class CabbageDetector(Node):
         # -------- Subscribers --------
         self.create_subscription(
             Image,
-            '/camera2/image_raw',
+            '/camera2/image_raw/compressed',
             self.image_callback,
             1)
 
@@ -51,7 +51,7 @@ class CabbageDetector(Node):
             '/quin/detect_trigger',
             self.detect_trigger_callback,
             10)
-
+    
         # -------- Publishers --------
         self.pub = self.create_publisher(Image, '/camera2/image_detected', 10)
 
