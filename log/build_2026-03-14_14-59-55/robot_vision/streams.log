@@ -1,0 +1,31 @@
+[1.763s] Invoking command in '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com PYTHONPATH=/home/jorjeen/plant/cabbage_project/build/robot_vision/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/jorjeen/plant/cabbage_project/install/robot_vision/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../../build/robot_vision build --build-base /home/jorjeen/plant/cabbage_project/build/robot_vision/build install --record /home/jorjeen/plant/cabbage_project/build/robot_vision/install.log --single-version-externally-managed install_data
+[1.962s] running egg_info
+[1.975s] writing ../../../build/robot_vision/robot_vision.egg-info/PKG-INFO
+[1.976s] writing dependency_links to ../../../build/robot_vision/robot_vision.egg-info/dependency_links.txt
+[1.976s] writing entry points to ../../../build/robot_vision/robot_vision.egg-info/entry_points.txt
+[1.976s] writing requirements to ../../../build/robot_vision/robot_vision.egg-info/requires.txt
+[1.976s] writing top-level names to ../../../build/robot_vision/robot_vision.egg-info/top_level.txt
+[2.003s] reading manifest file '../../../build/robot_vision/robot_vision.egg-info/SOURCES.txt'
+[2.003s] writing manifest file '../../../build/robot_vision/robot_vision.egg-info/SOURCES.txt'
+[2.003s] running build
+[2.003s] running build_py
+[2.004s] copying robot_vision/entry_node.py -> /home/jorjeen/plant/cabbage_project/build/robot_vision/build/lib/robot_vision
+[2.004s] copying robot_vision/cabbage_detector_node.py -> /home/jorjeen/plant/cabbage_project/build/robot_vision/build/lib/robot_vision
+[2.004s] running install
+[2.008s] running install_lib
+[2.022s] copying /home/jorjeen/plant/cabbage_project/build/robot_vision/build/lib/robot_vision/entry_node.py -> /home/jorjeen/plant/cabbage_project/install/robot_vision/lib/python3.12/site-packages/robot_vision
+[2.022s] copying /home/jorjeen/plant/cabbage_project/build/robot_vision/build/lib/robot_vision/cabbage_detector_node.py -> /home/jorjeen/plant/cabbage_project/install/robot_vision/lib/python3.12/site-packages/robot_vision
+[2.022s] byte-compiling /home/jorjeen/plant/cabbage_project/install/robot_vision/lib/python3.12/site-packages/robot_vision/entry_node.py to entry_node.cpython-312.pyc
+[2.024s] byte-compiling /home/jorjeen/plant/cabbage_project/install/robot_vision/lib/python3.12/site-packages/robot_vision/cabbage_detector_node.py to cabbage_detector_node.cpython-312.pyc
+[2.025s] running install_data
+[2.025s] running install_egg_info
+[2.039s] removing '/home/jorjeen/plant/cabbage_project/install/robot_vision/lib/python3.12/site-packages/robot_vision-0.0.0-py3.12.egg-info' (and everything under it)
+[2.039s] Copying ../../../build/robot_vision/robot_vision.egg-info to /home/jorjeen/plant/cabbage_project/install/robot_vision/lib/python3.12/site-packages/robot_vision-0.0.0-py3.12.egg-info
+[2.040s] running install_scripts
+[2.132s] Installing apriltag_node script to /home/jorjeen/plant/cabbage_project/install/robot_vision/lib/robot_vision
+[2.132s] Installing cabbage_detector_node script to /home/jorjeen/plant/cabbage_project/install/robot_vision/lib/robot_vision
+[2.132s] Installing camera_node script to /home/jorjeen/plant/cabbage_project/install/robot_vision/lib/robot_vision
+[2.132s] Installing entering script to /home/jorjeen/plant/cabbage_project/install/robot_vision/lib/robot_vision
+[2.132s] Installing entry_node script to /home/jorjeen/plant/cabbage_project/install/robot_vision/lib/robot_vision
+[2.132s] writing list of installed files to '/home/jorjeen/plant/cabbage_project/build/robot_vision/install.log'
+[2.174s] Invoked command in '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_vision' returned '0': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com PYTHONPATH=/home/jorjeen/plant/cabbage_project/build/robot_vision/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/jorjeen/plant/cabbage_project/install/robot_vision/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../../build/robot_vision build --build-base /home/jorjeen/plant/cabbage_project/build/robot_vision/build install --record /home/jorjeen/plant/cabbage_project/build/robot_vision/install.log --single-version-externally-managed install_data

@@ -23,7 +23,7 @@ class CabbageDetector(Node):
     def __init__(self):
         super().__init__('cabbage_detector')
 
-        self.model  = YOLO('/home/quin/cabbage_project/cab_model/best.pt')
+        self.model  = YOLO('/home/jorjeen/plant/cabbage_project/cab_model/best.pt')
         self.bridge = CvBridge()
 
         self.CAMERA_HEIGHT    = 32.5

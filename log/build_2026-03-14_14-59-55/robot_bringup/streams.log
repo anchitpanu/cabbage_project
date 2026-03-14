@@ -1,0 +1,19 @@
+[1.815s] Invoking command in '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_bringup': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com PYTHONPATH=/home/jorjeen/plant/cabbage_project/build/robot_bringup/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/jorjeen/plant/cabbage_project/install/robot_bringup/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../../build/robot_bringup build --build-base /home/jorjeen/plant/cabbage_project/build/robot_bringup/build install --record /home/jorjeen/plant/cabbage_project/build/robot_bringup/install.log --single-version-externally-managed install_data
+[2.004s] running egg_info
+[2.017s] writing ../../../build/robot_bringup/robot_bringup.egg-info/PKG-INFO
+[2.017s] writing dependency_links to ../../../build/robot_bringup/robot_bringup.egg-info/dependency_links.txt
+[2.017s] writing requirements to ../../../build/robot_bringup/robot_bringup.egg-info/requires.txt
+[2.017s] writing top-level names to ../../../build/robot_bringup/robot_bringup.egg-info/top_level.txt
+[2.044s] reading manifest file '../../../build/robot_bringup/robot_bringup.egg-info/SOURCES.txt'
+[2.045s] writing manifest file '../../../build/robot_bringup/robot_bringup.egg-info/SOURCES.txt'
+[2.045s] running build
+[2.045s] running build_py
+[2.045s] running install
+[2.050s] running install_lib
+[2.064s] running install_data
+[2.065s] running install_egg_info
+[2.079s] removing '/home/jorjeen/plant/cabbage_project/install/robot_bringup/lib/python3.12/site-packages/robot_bringup-0.0.0-py3.12.egg-info' (and everything under it)
+[2.079s] Copying ../../../build/robot_bringup/robot_bringup.egg-info to /home/jorjeen/plant/cabbage_project/install/robot_bringup/lib/python3.12/site-packages/robot_bringup-0.0.0-py3.12.egg-info
+[2.080s] running install_scripts
+[2.171s] writing list of installed files to '/home/jorjeen/plant/cabbage_project/build/robot_bringup/install.log'
+[2.207s] Invoked command in '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_bringup' returned '0': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com PYTHONPATH=/home/jorjeen/plant/cabbage_project/build/robot_bringup/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/jorjeen/plant/cabbage_project/install/robot_bringup/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../../build/robot_bringup build --build-base /home/jorjeen/plant/cabbage_project/build/robot_bringup/build install --record /home/jorjeen/plant/cabbage_project/build/robot_bringup/install.log --single-version-externally-managed install_data

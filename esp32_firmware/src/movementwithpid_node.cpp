@@ -2,10 +2,8 @@
 #include <cmath>
 
 #include <micro_ros_platformio.h>
-#include <stdio.h>
 
 #include <rcl/rcl.h>
-#include <rcl/error_handling.h>
 #include <rclc/rclc.h>
 #include <rclc/executor.h>
 
@@ -15,23 +13,47 @@
 
 #include "../config/move.h"
 
-// -------- Helpers --------
-#define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if ((temp_rc != RCL_RET_OK)) { rclErrorLoop(); }}
-#define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; (void)temp_rc; }
+// ================= CONFIG =================
 
-#define EXECUTE_EVERY_N_MS(MS, X) do { \
-  static volatile int64_t init = -1; \
-  if (init == -1) init = uxr_millis(); \
-  if (uxr_millis() - init > MS) { X; init = uxr_millis(); } \
-} while (0)
-
-// -------- Config --------
 #define CMD_TIMEOUT_MS 500
-#define PWM_STEPS 20
+#define CONTROL_PERIOD 20   // ms
 
-// -------- ROS --------
+// MAX_LINEAR_SPEED = (60rpm / 60) * pi * 0.085m ≈ 0.267 m/s
+const float MAX_LINEAR_SPEED = (MOTOR_MAX_RPM / 60.0f) * (M_PI * WHEEL_DIAMETER);
+
+//ADJUST VALUE HERE
+float KP_STRAIGHT = 0.015;   
+float KI_STRAIGHT = 0.0002;    
+float KD_STRAIGHT = 0.001;   
+
+float ENCODER_FILTER = 0.7;
+const float INTEGRAL_LIMIT = 30.0;
+
+#define PWM_FREQ    20000
+#define PWM_RES     8
+
+#define PWM_CH_M1_A 0
+#define PWM_CH_M1_B 1
+#define PWM_CH_M2_A 2
+#define PWM_CH_M2_B 3
+#define PWM_CH_M3_A 4
+#define PWM_CH_M3_B 5
+#define PWM_CH_M4_A 6
+#define PWM_CH_M4_B 7
+
+// ================= ROS =================
+
 rcl_publisher_t distance_publisher;
 std_msgs__msg__Float32 distance_msg;
+
+rcl_publisher_t debug_dl_publisher;
+rcl_publisher_t debug_dr_publisher;
+rcl_publisher_t debug_err_publisher;
+rcl_publisher_t debug_corr_publisher;
+std_msgs__msg__Float32 debug_dl_msg;
+std_msgs__msg__Float32 debug_dr_msg;
+std_msgs__msg__Float32 debug_err_msg;
+std_msgs__msg__Float32 debug_corr_msg;
 
 rcl_subscription_t motor_subscriber;
 geometry_msgs__msg__Twist motor_msg;
@@ -48,42 +70,95 @@ rcl_init_options_t init_options;
 
 enum states { WAITING_AGENT, AGENT_AVAILABLE, AGENT_CONNECTED, AGENT_DISCONNECTED } state;
 
-// -------- Encoder --------
+// ================= ENCODER =================
+
 volatile int32_t motor1_encoder_ticks = 0;
 volatile int32_t motor2_encoder_ticks = 0;
 volatile int32_t motor3_encoder_ticks = 0;
 volatile int32_t motor4_encoder_ticks = 0;
+
+int32_t prev_left_ticks  = 0;
+int32_t prev_right_ticks = 0;
+
+float filtered_error = 0;
+float prev_error     = 0;
+float integral_error = 0;
 
 float distance_inside_planter = 0.0;
 const float WHEEL_CIRCUMFERENCE = M_PI * WHEEL_DIAMETER;
 
 unsigned long prev_cmd_time = 0;
 
-// -------- Encoder ISR --------
-void IRAM_ATTR handleEncoder_MOTOR1_A(){ motor1_encoder_ticks += digitalRead(MOTOR1_ENCODER_PIN_B) ? 1 : -1; }
-void IRAM_ATTR handleEncoder_MOTOR2_A(){ motor2_encoder_ticks += digitalRead(MOTOR2_ENCODER_PIN_B) ? 1 : -1; }
-void IRAM_ATTR handleEncoder_MOTOR3_A(){ motor3_encoder_ticks += digitalRead(MOTOR3_ENCODER_PIN_B) ? 1 : -1; }
-void IRAM_ATTR handleEncoder_MOTOR4_A(){ motor4_encoder_ticks += digitalRead(MOTOR4_ENCODER_PIN_B) ? 1 : -1; }
+// ================= ENCODER ISR =================
 
-void IRAM_ATTR handleEncoder_MOTOR1_B(){ motor1_encoder_ticks += digitalRead(MOTOR1_ENCODER_PIN_A) ? -1 : 1; }
-void IRAM_ATTR handleEncoder_MOTOR2_B(){ motor2_encoder_ticks += digitalRead(MOTOR2_ENCODER_PIN_A) ? -1 : 1; }
-void IRAM_ATTR handleEncoder_MOTOR3_B(){ motor3_encoder_ticks += digitalRead(MOTOR3_ENCODER_PIN_A) ? -1 : 1; }
-void IRAM_ATTR handleEncoder_MOTOR4_B(){ motor4_encoder_ticks += digitalRead(MOTOR4_ENCODER_PIN_A) ? -1 : 1; }
+  // MOTOR 1
+  void IRAM_ATTR handleEncoder_MOTOR1_A()
+  {
+    int dir = digitalRead(MOTOR1_ENCODER_PIN_B) ? 1 : -1;
+    motor1_encoder_ticks += MOTOR1_ENCODER_INV ? -dir : dir;
+  }
 
-// -------- Forward declarations --------
-void rclErrorLoop();
+  void IRAM_ATTR handleEncoder_MOTOR1_B()
+  {
+    int dir = digitalRead(MOTOR1_ENCODER_PIN_A) ? -1 : 1;
+    motor1_encoder_ticks += MOTOR1_ENCODER_INV ? -dir : dir;
+  }
+
+
+  // MOTOR 2
+  void IRAM_ATTR handleEncoder_MOTOR2_A()
+  {
+    int dir = digitalRead(MOTOR2_ENCODER_PIN_B) ? 1 : -1;
+    motor2_encoder_ticks += MOTOR2_ENCODER_INV ? -dir : dir;
+  }
+
+  void IRAM_ATTR handleEncoder_MOTOR2_B()
+  {
+    int dir = digitalRead(MOTOR2_ENCODER_PIN_A) ? -1 : 1;
+    motor2_encoder_ticks += MOTOR2_ENCODER_INV ? -dir : dir;
+  }
+
+
+  // MOTOR 3
+  void IRAM_ATTR handleEncoder_MOTOR3_A()
+  {
+    int dir = digitalRead(MOTOR3_ENCODER_PIN_B) ? 1 : -1;
+    motor3_encoder_ticks += MOTOR3_ENCODER_INV ? -dir : dir;
+  }
+
+  void IRAM_ATTR handleEncoder_MOTOR3_B()
+  {
+    int dir = digitalRead(MOTOR3_ENCODER_PIN_A) ? -1 : 1;
+    motor3_encoder_ticks += MOTOR3_ENCODER_INV ? -dir : dir;
+  }
+
+
+  // MOTOR 4
+  void IRAM_ATTR handleEncoder_MOTOR4_A()
+  {
+    int dir = digitalRead(MOTOR4_ENCODER_PIN_B) ? 1 : -1;
+    motor4_encoder_ticks += MOTOR4_ENCODER_INV ? -dir : dir;
+  }
+
+  void IRAM_ATTR handleEncoder_MOTOR4_B()
+  {
+    int dir = digitalRead(MOTOR4_ENCODER_PIN_A) ? -1 : 1;
+    motor4_encoder_ticks += MOTOR4_ENCODER_INV ? -dir : dir;
+  }
+
+// ================= Forward declarations =================
+
 bool createEntities();
 bool destroyEntities();
 void controlCallback(rcl_timer_t *timer, int64_t last_call_time);
-
 void driveDifferential();
-void setMotorPWM(int a, int b, float rpm);
+void setMotorPWM(int ch_a, int ch_b, bool invert, float speed);
 void Encoder();
 void publishData();
+void twistCallback(const void *msgin);
+void resetCallback(const void *msgin);
 
-// =================================================
-// SETUP
-// =================================================
+// ================= SETUP =================
 
 void setup()
 {
@@ -92,14 +167,25 @@ void setup()
 
   set_microros_serial_transports(Serial);
 
-  pinMode(MOTOR1_IN_A, OUTPUT);
-  pinMode(MOTOR1_IN_B, OUTPUT);
-  pinMode(MOTOR2_IN_A, OUTPUT);
-  pinMode(MOTOR2_IN_B, OUTPUT);
-  pinMode(MOTOR3_IN_A, OUTPUT);
-  pinMode(MOTOR3_IN_B, OUTPUT);
-  pinMode(MOTOR4_IN_A, OUTPUT);
-  pinMode(MOTOR4_IN_B, OUTPUT);
+  ledcSetup(PWM_CH_M1_A, PWM_FREQ, PWM_RES);
+  ledcSetup(PWM_CH_M1_B, PWM_FREQ, PWM_RES);
+  ledcAttachPin(MOTOR1_IN_A, PWM_CH_M1_A);
+  ledcAttachPin(MOTOR1_IN_B, PWM_CH_M1_B);
+
+  ledcSetup(PWM_CH_M2_A, PWM_FREQ, PWM_RES);
+  ledcSetup(PWM_CH_M2_B, PWM_FREQ, PWM_RES);
+  ledcAttachPin(MOTOR2_IN_A, PWM_CH_M2_A);
+  ledcAttachPin(MOTOR2_IN_B, PWM_CH_M2_B);
+
+  ledcSetup(PWM_CH_M3_A, PWM_FREQ, PWM_RES);
+  ledcSetup(PWM_CH_M3_B, PWM_FREQ, PWM_RES);
+  ledcAttachPin(MOTOR3_IN_A, PWM_CH_M3_A);
+  ledcAttachPin(MOTOR3_IN_B, PWM_CH_M3_B);
+
+  ledcSetup(PWM_CH_M4_A, PWM_FREQ, PWM_RES);
+  ledcSetup(PWM_CH_M4_B, PWM_FREQ, PWM_RES);
+  ledcAttachPin(MOTOR4_IN_A, PWM_CH_M4_A);
+  ledcAttachPin(MOTOR4_IN_B, PWM_CH_M4_B);
 
   pinMode(MOTOR1_ENCODER_PIN_A, INPUT_PULLUP);
   pinMode(MOTOR1_ENCODER_PIN_B, INPUT_PULLUP);
@@ -112,288 +198,318 @@ void setup()
 
   attachInterrupt(digitalPinToInterrupt(MOTOR1_ENCODER_PIN_A), handleEncoder_MOTOR1_A, CHANGE);
   attachInterrupt(digitalPinToInterrupt(MOTOR1_ENCODER_PIN_B), handleEncoder_MOTOR1_B, CHANGE);
+
   attachInterrupt(digitalPinToInterrupt(MOTOR2_ENCODER_PIN_A), handleEncoder_MOTOR2_A, CHANGE);
   attachInterrupt(digitalPinToInterrupt(MOTOR2_ENCODER_PIN_B), handleEncoder_MOTOR2_B, CHANGE);
+
   attachInterrupt(digitalPinToInterrupt(MOTOR3_ENCODER_PIN_A), handleEncoder_MOTOR3_A, CHANGE);
   attachInterrupt(digitalPinToInterrupt(MOTOR3_ENCODER_PIN_B), handleEncoder_MOTOR3_B, CHANGE);
+
   attachInterrupt(digitalPinToInterrupt(MOTOR4_ENCODER_PIN_A), handleEncoder_MOTOR4_A, CHANGE);
   attachInterrupt(digitalPinToInterrupt(MOTOR4_ENCODER_PIN_B), handleEncoder_MOTOR4_B, CHANGE);
 
   state = WAITING_AGENT;
 }
 
-// =================================================
-// LOOP
-// =================================================
+// ================= LOOP =================
 
 void loop()
 {
   switch (state)
   {
     case WAITING_AGENT:
-
-      EXECUTE_EVERY_N_MS(1500,
-        state = (RMW_RET_OK == rmw_uros_ping_agent(100,10))
-        ? AGENT_AVAILABLE
-        : WAITING_AGENT;
-      );
-
+      if (RMW_RET_OK == rmw_uros_ping_agent(100, 10))
+        state = AGENT_AVAILABLE;
       break;
-
     case AGENT_AVAILABLE:
-
       state = createEntities() ? AGENT_CONNECTED : WAITING_AGENT;
-
-      if(state == WAITING_AGENT)
-        destroyEntities();
-
       break;
-
     case AGENT_CONNECTED:
-
-      EXECUTE_EVERY_N_MS(500,
-        state = (RMW_RET_OK == rmw_uros_ping_agent(100,10))
-        ? AGENT_CONNECTED
-        : AGENT_DISCONNECTED;
-      );
-
-      if(state == AGENT_CONNECTED)
-        rclc_executor_spin_some(&executor, RCL_MS_TO_NS(5));
-
+      rclc_executor_spin_some(&executor, RCL_MS_TO_NS(5));
+      if (RMW_RET_OK != rmw_uros_ping_agent(100, 10))
+        state = AGENT_DISCONNECTED;
       break;
-
     case AGENT_DISCONNECTED:
-
       destroyEntities();
       state = WAITING_AGENT;
-
       break;
   }
 }
 
-// =================================================
-// ROS CALLBACK
-// =================================================
+// ================= CALLBACKS =================
 
 void twistCallback(const void *msgin)
 {
   const geometry_msgs__msg__Twist *msg = (const geometry_msgs__msg__Twist *)msgin;
-
   motor_msg = *msg;
-
   prev_cmd_time = millis();
 }
 
 void resetCallback(const void *msgin)
 {
   const std_msgs__msg__Bool *msg = (const std_msgs__msg__Bool *)msgin;
-
-  if(msg->data)
+  if (msg->data)
   {
     distance_inside_planter = 0;
-
     motor1_encoder_ticks = 0;
     motor2_encoder_ticks = 0;
     motor3_encoder_ticks = 0;
     motor4_encoder_ticks = 0;
+    filtered_error = 0;
+    prev_error     = 0;
+    integral_error = 0;
+    prev_left_ticks  = 0;
+    prev_right_ticks = 0;
   }
 }
 
-// =================================================
-// CONTROL LOOP
-// =================================================
+// ================= CONTROL LOOP =================
 
 void controlCallback(rcl_timer_t *timer, int64_t last_call_time)
 {
-  RCLC_UNUSED(last_call_time);
-
-  if(timer != NULL)
+  (void) last_call_time;
+  if (timer != NULL)
   {
-    Encoder();
     driveDifferential();
+    Encoder();
     publishData();
   }
 }
 
-// =================================================
-// DRIVE DIFFERENTIAL
-// =================================================
+// ================= DRIVE =================
 
 void driveDifferential()
 {
-  if(millis() - prev_cmd_time > CMD_TIMEOUT_MS)
+  if (millis() - prev_cmd_time > CMD_TIMEOUT_MS)
   {
-    digitalWrite(MOTOR1_IN_A, LOW);
-    digitalWrite(MOTOR1_IN_B, LOW);
-    digitalWrite(MOTOR2_IN_A, LOW);
-    digitalWrite(MOTOR2_IN_B, LOW);
-    digitalWrite(MOTOR3_IN_A, LOW);
-    digitalWrite(MOTOR3_IN_B, LOW);
-    digitalWrite(MOTOR4_IN_A, LOW);
-    digitalWrite(MOTOR4_IN_B, LOW);
+    setMotorPWM(PWM_CH_M1_A, PWM_CH_M1_B, MOTOR1_INV, 0);
+    setMotorPWM(PWM_CH_M2_A, PWM_CH_M2_B, MOTOR2_INV, 0);
+    setMotorPWM(PWM_CH_M3_A, PWM_CH_M3_B, MOTOR3_INV, 0);
+    setMotorPWM(PWM_CH_M4_A, PWM_CH_M4_B, MOTOR4_INV, 0);
     return;
   }
 
   float Vx = motor_msg.linear.x;
   float Wz = motor_msg.angular.z;
 
-  float wheel_left  = Vx - (Wz * LR_WHEELS_DISTANCE * 0.5);
-  float wheel_right = Vx + (Wz * LR_WHEELS_DISTANCE * 0.5);
+  float left_cmd  = (Vx - Wz * LR_WHEELS_DISTANCE * 0.5f) / MAX_LINEAR_SPEED;
+  float right_cmd = (Vx + Wz * LR_WHEELS_DISTANCE * 0.5f) / MAX_LINEAR_SPEED;
 
-  float left_rpm  = wheel_left;
-  float right_rpm = wheel_right;
+  left_cmd  = constrain(left_cmd,  -MAX_RPM_RATIO, MAX_RPM_RATIO);
+  right_cmd = constrain(right_cmd, -MAX_RPM_RATIO, MAX_RPM_RATIO);
 
-  setMotorPWM(MOTOR1_IN_A, MOTOR1_IN_B, left_rpm);
-  setMotorPWM(MOTOR3_IN_A, MOTOR3_IN_B, left_rpm);
+  bool is_straight = (fabs(Wz) < 0.05 && fabs(Vx) > 0.01);
 
-  // ⭐ IMPORTANT FIX
-  setMotorPWM(MOTOR2_IN_A, MOTOR2_IN_B, -right_rpm);
-  setMotorPWM(MOTOR4_IN_A, MOTOR4_IN_B, -right_rpm);
+  float correction = 0;
+
+  if (is_straight)
+  {
+    int32_t left_ticks  = motor1_encoder_ticks + motor3_encoder_ticks;
+    int32_t right_ticks = motor2_encoder_ticks + motor4_encoder_ticks;
+
+    int32_t d_left  = left_ticks  - prev_left_ticks;
+    int32_t d_right = right_ticks - prev_right_ticks;
+
+    prev_left_ticks  = left_ticks;
+    prev_right_ticks = right_ticks;
+
+    float LEFT_SCALE  = 1.0;
+    float RIGHT_SCALE = 0.27; 
+
+    float left_speed  = d_left;
+    float right_speed = d_right * RIGHT_SCALE;
+
+    float error = right_speed - left_speed;
+
+    filtered_error = ENCODER_FILTER * filtered_error +
+                     (1.0f - ENCODER_FILTER) * error;
+
+    integral_error += filtered_error;
+    integral_error = constrain(integral_error, -INTEGRAL_LIMIT, INTEGRAL_LIMIT);
+
+    float derivative = filtered_error - prev_error;
+    prev_error = filtered_error;
+
+    correction =
+        KP_STRAIGHT * filtered_error +
+        KI_STRAIGHT * integral_error +
+        KD_STRAIGHT * derivative;
+
+    correction = constrain(correction, -0.3, 0.3);
+
+    left_cmd  -= correction;
+    right_cmd += correction;
+
+    left_cmd  = constrain(left_cmd,  -MAX_RPM_RATIO, MAX_RPM_RATIO);
+    right_cmd = constrain(right_cmd, -MAX_RPM_RATIO, MAX_RPM_RATIO);
+
+    // motor bias compensation
+    left_cmd  *= 1.215;
+    right_cmd *= 0.99;
+
+    debug_dl_msg.data = d_left;
+    debug_dr_msg.data = d_right;
+    debug_err_msg.data = filtered_error;
+    debug_corr_msg.data = correction;
+
+    rcl_publish(&debug_dl_publisher, &debug_dl_msg, NULL);
+    rcl_publish(&debug_dr_publisher, &debug_dr_msg, NULL);
+    rcl_publish(&debug_err_publisher, &debug_err_msg, NULL);
+    rcl_publish(&debug_corr_publisher, &debug_corr_msg, NULL);
+  }
+
+    setMotorPWM(PWM_CH_M1_A, PWM_CH_M1_B, MOTOR1_INV, left_cmd);
+    setMotorPWM(PWM_CH_M3_A, PWM_CH_M3_B, MOTOR3_INV, left_cmd);
+    setMotorPWM(PWM_CH_M2_A, PWM_CH_M2_B, MOTOR2_INV, right_cmd);
+    setMotorPWM(PWM_CH_M4_A, PWM_CH_M4_B, MOTOR4_INV, right_cmd);
 }
 
-// =================================================
-// MOTOR DRIVER
-// =================================================
+// ================= MOTOR PWM (MDD3A) =================
+// Forward:  ch_a=duty, ch_b=0
+// Backward: ch_a=0,    ch_b=duty
+// Stop:     ch_a=0,    ch_b=0
 
-void setMotorPWM(int a, int b, float rpm)
+void setMotorPWM(int ch_a, int ch_b, bool invert, float speed)
 {
-  if(rpm > 0)
+  if (invert) speed = -speed;
+
+  int duty = (int)(fabsf(speed) * 255.0f);
+  duty = constrain(duty, 0, 255);
+
+  if (speed > 0.001f)
   {
-    digitalWrite(a, HIGH);
-    digitalWrite(b, LOW);
+    ledcWrite(ch_a, duty);
+    ledcWrite(ch_b, 0);
   }
-  else if(rpm < 0)
+  else if (speed < -0.001f)
   {
-    digitalWrite(a, LOW);
-    digitalWrite(b, HIGH);
+    ledcWrite(ch_a, 0);
+    ledcWrite(ch_b, duty);
   }
   else
   {
-    digitalWrite(a, LOW);
-    digitalWrite(b, LOW);
+    ledcWrite(ch_a, 0);
+    ledcWrite(ch_b, 0);
   }
 }
 
-// =================================================
-// ENCODER
-// =================================================
+// ================= ENCODER DISTANCE =================
 
 void Encoder()
 {
-  static int32_t prev1=0,prev2=0,prev3=0,prev4=0;
+  static int32_t prev1=0, prev2=0, prev3=0, prev4=0;
 
   int32_t t1 = motor1_encoder_ticks;
   int32_t t2 = motor2_encoder_ticks;
   int32_t t3 = motor3_encoder_ticks;
   int32_t t4 = motor4_encoder_ticks;
 
-  int32_t d1 = t1-prev1;
-  int32_t d2 = t2-prev2;
-  int32_t d3 = t3-prev3;
-  int32_t d4 = t4-prev4;
+  int32_t d1 = t1 - prev1;
+  int32_t d2 = t2 - prev2;
+  int32_t d3 = t3 - prev3;
+  int32_t d4 = t4 - prev4;
 
-  prev1=t1;
-  prev2=t2;
-  prev3=t3;
-  prev4=t4;
+  prev1 = t1; prev2 = t2; prev3 = t3; prev4 = t4;
 
-  float avg_ticks=(d1+d2+d3+d4)/4.0;
-  float rev=avg_ticks/ENCODER_TICKS_PER_REV;
+  float avg_ticks = (d1 + d2 + d3 + d4) / 4.0f;
+  float rev       = avg_ticks / ENCODER_TICKS_PER_REV;
 
-  distance_inside_planter -= rev*WHEEL_CIRCUMFERENCE;
+  distance_inside_planter -= rev * WHEEL_CIRCUMFERENCE;
 }
 
-// =================================================
-// PUBLISH
-// =================================================
+// ================= PUBLISH =================
 
 void publishData()
 {
   distance_msg.data = distance_inside_planter;
-
-  RCSOFTCHECK(rcl_publish(&distance_publisher,&distance_msg,NULL));
+  rcl_publish(&distance_publisher, &distance_msg, NULL);
 }
 
-// =================================================
-// CREATE ENTITIES
-// =================================================
+// ================= createEntities =================
 
 bool createEntities()
 {
   allocator = rcl_get_default_allocator();
 
   init_options = rcl_get_zero_initialized_init_options();
+  rcl_init_options_init(&init_options, allocator);
+  rcl_init_options_set_domain_id(&init_options, 77);
 
-  RCCHECK(rcl_init_options_init(&init_options, allocator));
-  RCCHECK(rcl_init_options_set_domain_id(&init_options,77));
+  rclc_support_init_with_options(&support, 0, NULL, &init_options, &allocator);
+  rclc_node_init_default(&node, "quin_robot_node", "", &support);
 
-  RCCHECK(rclc_support_init_with_options(&support,0,NULL,&init_options,&allocator));
+  rclc_publisher_init_best_effort(
+    &distance_publisher, &node,
+    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float32),
+    "/quin/distance_inside_planter");
 
-  RCCHECK(rclc_node_init_default(&node,"quin_robot_node","",&support));
+  rclc_publisher_init_best_effort(
+    &debug_dl_publisher, &node,
+    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float32),
+    "/quin/debug/d_left");
 
-  RCCHECK(rclc_publisher_init_best_effort(
-    &distance_publisher,&node,
-    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs,msg,Float32),
-    "/quin/distance_inside_planter"));
+  rclc_publisher_init_best_effort(
+    &debug_dr_publisher, &node,
+    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float32),
+    "/quin/debug/d_right");
 
-  RCCHECK(rclc_subscription_init_best_effort(
-    &motor_subscriber,&node,
-    ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs,msg,Twist),
-    "/quin/move_command"));
+  rclc_publisher_init_best_effort(
+    &debug_err_publisher, &node,
+    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float32),
+    "/quin/debug/error");
 
-  RCCHECK(rclc_subscription_init_best_effort(
-    &reset_subscriber,&node,
-    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs,msg,Bool),
-    "/quin/reset_distance"));
+  rclc_publisher_init_best_effort(
+    &debug_corr_publisher, &node,
+    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float32),
+    "/quin/debug/correction");
 
-  RCCHECK(rclc_timer_init_default(
-    &control_timer,&support,
-    RCL_MS_TO_NS(20),
-    controlCallback));
+  rclc_subscription_init_best_effort(
+    &motor_subscriber, &node,
+    ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist),
+    "/quin/move_command");
+
+  rclc_subscription_init_best_effort(
+    &reset_subscriber, &node,
+    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Bool),
+    "/quin/reset_distance");
+
+  rclc_timer_init_default(
+    &control_timer, &support,
+    RCL_MS_TO_NS(CONTROL_PERIOD),
+    controlCallback);
 
   executor = rclc_executor_get_zero_initialized_executor();
+  rclc_executor_init(&executor, &support.context, 3, &allocator);
 
-  RCCHECK(rclc_executor_init(&executor,&support.context,3,&allocator));
+  rclc_executor_add_subscription(
+    &executor, &motor_subscriber, &motor_msg, &twistCallback, ON_NEW_DATA);
 
-  RCCHECK(rclc_executor_add_subscription(
-    &executor,&motor_subscriber,&motor_msg,&twistCallback,ON_NEW_DATA));
+  rclc_executor_add_subscription(
+    &executor, &reset_subscriber, &reset_msg, &resetCallback, ON_NEW_DATA);
 
-  RCCHECK(rclc_executor_add_subscription(
-    &executor,&reset_subscriber,&reset_msg,&resetCallback,ON_NEW_DATA));
-
-  RCCHECK(rclc_executor_add_timer(&executor,&control_timer));
+  rclc_executor_add_timer(&executor, &control_timer);
 
   return true;
 }
 
-// =================================================
-// DESTROY
-// =================================================
+// ================= destroyEntities =================
 
 bool destroyEntities()
 {
-  rmw_context_t * rmw_context = rcl_context_get_rmw_context(&support.context);
-  (void)rmw_uros_set_context_entity_destroy_session_timeout(rmw_context,0);
+  rmw_context_t *rmw_context = rcl_context_get_rmw_context(&support.context);
+  rmw_uros_set_context_entity_destroy_session_timeout(rmw_context, 0);
 
-  RCSOFTCHECK(rcl_publisher_fini(&distance_publisher,&node));
-  RCSOFTCHECK(rcl_subscription_fini(&motor_subscriber,&node));
-  RCSOFTCHECK(rcl_subscription_fini(&reset_subscriber,&node));
-  RCSOFTCHECK(rcl_timer_fini(&control_timer));
-  RCSOFTCHECK(rcl_node_fini(&node));
-  RCSOFTCHECK(rclc_executor_fini(&executor));
-  RCSOFTCHECK(rclc_support_fini(&support));
+  rcl_publisher_fini(&distance_publisher,   &node);
+  rcl_publisher_fini(&debug_dl_publisher,   &node);
+  rcl_publisher_fini(&debug_dr_publisher,   &node);
+  rcl_publisher_fini(&debug_err_publisher,  &node);
+  rcl_publisher_fini(&debug_corr_publisher, &node);
+  rcl_subscription_fini(&motor_subscriber,  &node);
+  rcl_subscription_fini(&reset_subscriber,  &node);
+  rcl_timer_fini(&control_timer);
+  rcl_node_fini(&node);
+  rclc_executor_fini(&executor);
+  rclc_support_fini(&support);
 
   return true;
-}
-
-// =================================================
-// ERROR
-// =================================================
-
-void rclErrorLoop()
-{
-  while(true)
-  {
-    delay(100);
-  }
 }
