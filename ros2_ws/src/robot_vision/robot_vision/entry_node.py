@@ -139,6 +139,19 @@ class EnterBox(Node):
         target_x = int(w * self.TARGET_RATIO)
 
         self.frame_count += 1
+
+        # Always publish STOP immediately — do not skip frames when stopping
+        if self.STATE == "STOP":
+            self.send_command("STOP")
+            if not self._entry_done_sent:
+                done_msg = Bool()
+                done_msg.data = True
+                self.entry_done_pub.publish(done_msg)
+                self._entry_done_sent = True
+            out_msg = self.bridge.cv2_to_imgmsg(frame, encoding='bgr8')
+            self.pub.publish(out_msg)
+            return
+
         if self.frame_count % 2 != 0:
             return
 
@@ -272,19 +285,7 @@ class EnterBox(Node):
                 if time.time() - self.final_start > self.FINAL_FORWARD_TIME:
                     self.STATE = "STOP"
 
-            elif self.STATE == "STOP":
 
-                action_text = "STOP"
-                self.send_command(action_text)
-
-                if not self._entry_done_sent:
-
-                    done_msg = Bool()
-                    done_msg.data = True
-
-                    self.entry_done_pub.publish(done_msg)
-
-                    self._entry_done_sent = True
 
         cv2.putText(frame, f"STATE: {self.STATE}", (30, 40),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
