@@ -91,9 +91,8 @@ class EnterBox(Node):
 
     def send_command(self, cmd):
 
-        if cmd == self.last_cmd:
-            return
-
+        # Always publish — no deduplication guard.
+        # ROS controllers need continuous messages or the robot stops.
         self.last_cmd = cmd
 
         msg = Twist()
@@ -126,6 +125,7 @@ class EnterBox(Node):
             msg.linear.x = 0.0
             msg.angular.z = 0.0
 
+        # Unknown command → publish zero Twist (safe stop)
         self.cmd_pub.publish(msg)
 
     # -------------------------------------------------
@@ -191,7 +191,7 @@ class EnterBox(Node):
                 self.tag_seen = True
                 self.lost_counter = 0
 
-                cv2.rectangle(frame,(x1,y1),(x2,y2),(0,255,0),2)
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
             else:
                 self.lost_counter += 1
@@ -212,7 +212,7 @@ class EnterBox(Node):
 
             if self.STATE == "START_CURVE":
 
-                action_text = "CURVE RIGHT"
+                action_text = "CURVE_RIGHT"          # FIX: was "CURVE RIGHT" (space) — no match in send_command
                 self.send_command(action_text)
 
                 if time.time() - self.curve_start > 2.5:
@@ -294,16 +294,16 @@ class EnterBox(Node):
 
                     self._entry_done_sent = True
 
-        cv2.putText(frame,f"STATE: {self.STATE}",(30,40),
-                    cv2.FONT_HERSHEY_SIMPLEX,0.8,(0,255,0),2)
+        cv2.putText(frame, f"STATE: {self.STATE}", (30, 40),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
 
-        cv2.putText(frame,f"ACTION: {action_text}",(30,70),
-                    cv2.FONT_HERSHEY_SIMPLEX,0.8,(0,255,255),2)
+        cv2.putText(frame, f"ACTION: {action_text}", (30, 70),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
 
         if center_x is not None:
-            cv2.line(frame,(int(center_x),0),(int(center_x),h),(0,0,255),2)
+            cv2.line(frame, (int(center_x), 0), (int(center_x), h), (0, 0, 255), 2)
 
-        cv2.line(frame,(target_x,0),(target_x,h),(255,0,0),2)
+        cv2.line(frame, (target_x, 0), (target_x, h), (255, 0, 0), 2)
 
         out_msg = self.bridge.cv2_to_imgmsg(frame, encoding='bgr8')
         self.pub.publish(out_msg)

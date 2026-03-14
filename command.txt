@@ -23,7 +23,7 @@ web dashboard
         -r __ns:=/camera1 \
         -p image_width:=320 \
         -p image_height:=240 \
-        -p framerate:=10
+        -p framerate:=10.0
 
 **top camera
 -T4: ros2 run usb_cam usb_cam_node_exe --ros-args \
@@ -31,6 +31,7 @@ web dashboard
         -r __ns:=/camera2 \
         -p image_width:=320 \
         -p image_height:=240
+        -p framerate:=10.0
 
 
 @pc
