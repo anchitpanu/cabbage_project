@@ -56,6 +56,7 @@ class EnterBox(Node):
 
         self.last_cmd = ""
         self._entry_done_sent = False
+        self._completed_final_forward = False   # FIX Bug 3: track correct completion path
 
         self.frame_count = 0
         self.tag_confirm_count = 0
@@ -86,6 +87,7 @@ class EnterBox(Node):
 
         self.last_cmd = ""
         self._entry_done_sent = False
+        self._completed_final_forward = False   # FIX Bug 3: reset on new entry
         self.frame_count = 0
         self.tag_confirm_count = 0
 
@@ -93,8 +95,6 @@ class EnterBox(Node):
 
     def send_command(self, cmd):
 
-        # Always publish — no deduplication guard.
-        # ROS controllers need continuous messages or the robot stops.
         self.last_cmd = cmd
 
         msg = Twist()
@@ -127,7 +127,6 @@ class EnterBox(Node):
             msg.linear.x = 0.0
             msg.angular.z = 0.0
 
-        # Unknown command → publish zero Twist (safe stop)
         self.cmd_pub.publish(msg)
 
     # -------------------------------------------------
@@ -142,20 +141,26 @@ class EnterBox(Node):
 
         self.frame_count += 1
 
-        # Always publish STOP immediately — do not skip frames when stopping
+        # STOP state: always process every frame — no skipping
         if self.STATE == "STOP":
             self.send_command("STOP")
             if not self._entry_done_sent:
                 done_msg = Bool()
-                done_msg.data = True
+                done_msg.data = self._completed_final_forward   # FIX Bug 3: only True if really done
                 self.entry_done_pub.publish(done_msg)
                 self._entry_done_sent = True
+                if self._completed_final_forward:
+                    self.get_logger().info("Entry complete — published entry_done = True")
+                else:
+                    self.get_logger().warn("Entry stopped without completing — published entry_done = False")
             out_msg = self.bridge.cv2_to_imgmsg(frame, encoding='bgr8')
             self.pub.publish(out_msg)
             return
 
-        if self.frame_count % 2 != 0:
-            return
+        # FIX Bug 1: ALIGN_TAG must also never skip frames so it reacts immediately
+        if self.STATE not in ("STOP", "ALIGN_TAG"):
+            if self.frame_count % 2 != 0:
+                return
 
         frame_small = cv2.resize(frame, (256, 256))
 
@@ -227,25 +232,26 @@ class EnterBox(Node):
 
             if self.STATE == "SEARCH_TAG":
 
+                # FIX Bug 4: stop immediately when tag is seen anywhere on screen,
+                # don't keep rotating — count confirmations while stopped
                 if tag_detected:
                     self.tag_confirm_count += 1
-                else:
-                    self.tag_confirm_count = 0
+                    self.send_command("STOP")   # stop rotating the moment tag appears
 
-                if self.tag_confirm_count >= 3:
-                    # Confirmed tag seen consistently — stop and align
-                    action_text = "STOP"
-                    self.send_command(action_text)
-                    self.tag_confirm_count = 0
-                    self.STATE = "ALIGN_TAG"
+                    if self.tag_confirm_count >= 3:
+                        self.get_logger().info("Tag confirmed — switching to ALIGN_TAG")
+                        self.tag_confirm_count = 0
+                        self.lost_counter = 0   # FIX Bug 2: reset lost_counter on transition
+                        self.STATE = "ALIGN_TAG"
                 else:
+                    self.tag_confirm_count = 0
                     action_text = "ROTATE_LEFT"
-                    self.send_command(action_text)
+                    self.send_command(action_text)  # only rotate when tag not visible
 
             elif self.STATE == "ALIGN_TAG":
 
                 if not tag_detected and self.lost_counter > 8:
-                    # Lost tag for too long — stop and search again
+                    self.get_logger().warn("Tag lost during align — returning to SEARCH_TAG")
                     action_text = "STOP"
                     self.send_command(action_text)
                     self.tag_confirm_count = 0
@@ -258,6 +264,8 @@ class EnterBox(Node):
                     if abs(error) < 5:
                         action_text = "STOP"
                         self.send_command(action_text)
+                        self.lost_counter = 0   # FIX Bug 2: reset lost_counter on transition
+                        self.get_logger().info("Aligned — switching to APPROACH_TAG")
                         self.STATE = "APPROACH_TAG"
 
                     elif error > 0:
@@ -289,8 +297,9 @@ class EnterBox(Node):
                         self.send_command(action_text)
 
                 else:
-
-                    if self.tag_seen and self.lost_counter > 5:
+                    # FIX Bug 2: raise threshold from 5 to 15 to avoid false FINAL_FORWARD trigger
+                    if self.tag_seen and self.lost_counter > 15:
+                        self.get_logger().info("Tag passed — switching to FINAL_FORWARD")
                         self.STATE = "FINAL_FORWARD"
                         self.final_start = time.time()
 
@@ -300,9 +309,9 @@ class EnterBox(Node):
                 self.send_command(action_text)
 
                 if time.time() - self.final_start > self.FINAL_FORWARD_TIME:
+                    self._completed_final_forward = True   # FIX Bug 3: mark true completion
+                    self.get_logger().info("Final forward complete — stopping")
                     self.STATE = "STOP"
-
-
 
         cv2.putText(frame, f"STATE: {self.STATE}", (30, 40),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
