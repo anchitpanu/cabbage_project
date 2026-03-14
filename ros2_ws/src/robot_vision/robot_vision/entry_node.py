@@ -73,9 +73,9 @@ class EnterBox(Node):
 
         self.get_logger().info("Entry start received")
 
-        self.STATE = "START_CURVE"
+        self.STATE = "SEARCH_TAG"
 
-        self.curve_start = time.time()
+        self.curve_start = None
         self.final_start = None
 
         self.lost_counter = 0
@@ -210,15 +210,7 @@ class EnterBox(Node):
 
         if self.STATE != "WAITING":
 
-            if self.STATE == "START_CURVE":
-
-                action_text = "CURVE_RIGHT"          # FIX: was "CURVE RIGHT" (space) — no match in send_command
-                self.send_command(action_text)
-
-                if time.time() - self.curve_start > 2.5:
-                    self.STATE = "SEARCH_TAG"
-
-            elif self.STATE == "SEARCH_TAG":
+            if self.STATE == "SEARCH_TAG":
 
                 if not tag_detected:
                     action_text = "ROTATE_LEFT"
