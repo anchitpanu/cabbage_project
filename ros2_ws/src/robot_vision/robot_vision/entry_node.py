@@ -58,6 +58,7 @@ class EnterBox(Node):
         self._entry_done_sent = False
 
         self.frame_count = 0
+        self.tag_confirm_count = 0
 
         self.get_logger().info("Enter Box Node Started — waiting for /entry_start...")
 
@@ -86,6 +87,7 @@ class EnterBox(Node):
         self.last_cmd = ""
         self._entry_done_sent = False
         self.frame_count = 0
+        self.tag_confirm_count = 0
 
     # -------------------------------------------------
 
@@ -225,22 +227,37 @@ class EnterBox(Node):
 
             if self.STATE == "SEARCH_TAG":
 
-                if not tag_detected:
+                if tag_detected:
+                    self.tag_confirm_count += 1
+                else:
+                    self.tag_confirm_count = 0
+
+                if self.tag_confirm_count >= 3:
+                    # Confirmed tag seen consistently — stop and align
+                    action_text = "STOP"
+                    self.send_command(action_text)
+                    self.tag_confirm_count = 0
+                    self.STATE = "ALIGN_TAG"
+                else:
                     action_text = "ROTATE_LEFT"
                     self.send_command(action_text)
-                else:
-                    self.STATE = "ALIGN_TAG"
 
             elif self.STATE == "ALIGN_TAG":
 
-                if center_x is None:
+                if not tag_detected and self.lost_counter > 8:
+                    # Lost tag for too long — stop and search again
+                    action_text = "STOP"
+                    self.send_command(action_text)
+                    self.tag_confirm_count = 0
                     self.STATE = "SEARCH_TAG"
 
-                else:
+                elif center_x is not None:
 
                     error = center_x - target_x
 
                     if abs(error) < 5:
+                        action_text = "STOP"
+                        self.send_command(action_text)
                         self.STATE = "APPROACH_TAG"
 
                     elif error > 0:
