@@ -41,7 +41,7 @@ class CabbageDetector(Node):
         # -------- Subscribers --------
         self.create_subscription(
             Image,
-            '/camera2/image_raw/compressed',
+            '/camera2/image_raw',
             self.image_callback,
             1)
 
