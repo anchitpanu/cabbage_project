@@ -212,7 +212,7 @@ class EnteringThread:
                 cv2.line(draw_frame,
                          (tag_center,0),
                          (tag_center,h),
-                         (0,255,255),
+                         (0,0,255),
                          2)
 
                 offset = tag_center - target_x
