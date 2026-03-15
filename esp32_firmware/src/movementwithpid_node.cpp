@@ -353,12 +353,13 @@ void driveDifferential()
     integral_error = 0;
   }                                         
 
-  // ← setMotorPWM
-  setMotorPWM(PWM_CH_M1_A, PWM_CH_M1_B, MOTOR1_INV, left_cmd);
-  setMotorPWM(PWM_CH_M3_A, PWM_CH_M3_B, MOTOR3_INV, left_cmd);
-  setMotorPWM(PWM_CH_M2_A, PWM_CH_M2_B, MOTOR2_INV, right_cmd);
-  setMotorPWM(PWM_CH_M4_A, PWM_CH_M4_B, MOTOR4_INV, right_cmd);
+  float LEFT_BIAS  = 1.00f;
+  float RIGHT_BIAS = 1.2f;
 
+  setMotorPWM(PWM_CH_M1_A, PWM_CH_M1_B, MOTOR1_INV, left_cmd  * LEFT_BIAS);
+  setMotorPWM(PWM_CH_M3_A, PWM_CH_M3_B, MOTOR3_INV, left_cmd  * LEFT_BIAS);
+  setMotorPWM(PWM_CH_M2_A, PWM_CH_M2_B, MOTOR2_INV, right_cmd * RIGHT_BIAS);
+  setMotorPWM(PWM_CH_M4_A, PWM_CH_M4_B, MOTOR4_INV, right_cmd * RIGHT_BIAS);
 }                           
 
 // ================= MOTOR PWM (MDD3A) =================
@@ -414,7 +415,7 @@ void Encoder()
   float avg_ticks = (d1 + d2 + d3 + d4) / 4.0f;
   float rev       = avg_ticks / ENCODER_TICKS_PER_REV;
 
-  distance_inside_planter += rev * WHEEL_CIRCUMFERENCE;
+  distance_inside_planter += rev * WHEEL_CIRCUMFERENCE * 0.641f;  //callibrate dist. w/dashboard
 }
 
 // ================= PUBLISH =================

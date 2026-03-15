@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
@@ -15,25 +17,22 @@ class CabbageDetector(Node):
         self.model  = YOLO('/home/jorjeen/plant/cabbage_project/cab_model/best.pt')
         self.bridge = CvBridge()
 
-        self.CAMERA_HEIGHT    = 32.5
-        self.FOCAL_LENGTH     = 440
-        self.harvest_size_cm  = 10.0
+        self.CAMERA_HEIGHT = 32.5
+        self.FOCAL_LENGTH  = 440
 
-        self.last_cmd    = ""
+        self.last_cmd     = ""
         self.frame_width  = 640
         self.frame_height = 480
 
-        # Trigger flag — True only when mission_node requests a detection scan
         self._triggered = False
 
         # -------- Subscribers --------
         self.create_subscription(
             Image,
-            '/camera1/image_raw',
+            '/camera2/image_raw',        
             self.image_callback,
             1)
 
-        # mission_node sends True here to request one detection scan
         self.create_subscription(
             Bool,
             '/quin/detect_trigger',
@@ -41,29 +40,30 @@ class CabbageDetector(Node):
             10)
 
         # -------- Publishers --------
-        self.pub = self.create_publisher(Image, '/camera1/image_detected', 10)
+        self.pub = self.create_publisher(
+            Image,
+            '/camera2/image_detected',   
+            10)
 
-        # Sends result back to mission_node
-        # Format: "size_cm,harvestable"
-        #   e.g.  "12.4,0"  → not harvestable
-        #         "18.7,1"  → harvestable
-        #         "0.0,-1"  → not detected
-        self.detect_result_pub = self.create_publisher(String, '/quin/detect_result', 10)
+        # Format: "size_cm"  เช่น "12.4"
+        # ถ้าไม่พบ: "0.0"
+        self.detect_result_pub = self.create_publisher(
+            String,
+            '/quin/detect_result',
+            10)
 
         self.get_logger().info('Cabbage Detector started — waiting for /quin/detect_trigger...')
 
     # ==================================================
-    # Trigger from mission_node
+    # Trigger
     # ==================================================
 
     def detect_trigger_callback(self, msg: Bool):
         if not msg.data:
             return
-
         if self._triggered:
             self.get_logger().warn("Already scanning — duplicate trigger ignored")
             return
-
         self._triggered = True
         self.get_logger().info("Detection triggered — scanning next frame...")
 
@@ -87,13 +87,13 @@ class CabbageDetector(Node):
         frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
         self.frame_height, self.frame_width = frame.shape[:2]
 
-        # Not triggered — just publish raw frame, skip YOLO entirely
+        # ไม่ถูก trigger — publish raw frame ผ่านไปเลย
         if not self._triggered:
             out_msg = self.bridge.cv2_to_imgmsg(frame, encoding='bgr8')
             self.pub.publish(out_msg)
             return
 
-        # ---- YOLO runs only when triggered ----
+        # ---- YOLO รันเฉพาะตอน triggered ----
         frame_small = cv2.resize(frame, (320, 320))
         scale_x = frame.shape[1] / 320
         scale_y = frame.shape[0] / 320
@@ -109,26 +109,29 @@ class CabbageDetector(Node):
         top_bound    = self.frame_height * 0.15
         bottom_bound = self.frame_height * 0.5
 
-        cv2.line(frame, (0, int(top_bound)),    (self.frame_width, int(top_bound)),    (255, 0, 0), 1)
-        cv2.line(frame, (0, int(bottom_bound)), (self.frame_width, int(bottom_bound)), (255, 0, 0), 1)
+        cv2.line(frame, (0, int(top_bound)),
+                 (self.frame_width, int(top_bound)),    (255, 0, 0), 1)
+        cv2.line(frame, (0, int(bottom_bound)),
+                 (self.frame_width, int(bottom_bound)), (255, 0, 0), 1)
 
         if len(results.boxes) == 0:
-
+            # ไม่พบกะหล่ำ
             self.send_command("MOVE_FORWARD")
             cv2.putText(frame, "MOVE FORWARD", (10, 30),
                         cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 0), 2)
+            cv2.putText(frame, "ไม่พบกะหล่ำปลี", (10, 65),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
 
-            # Triggered but nothing detected → report not detected
-            self._publish_result(size_cm=0.0, harvestable=-1)
+            self._publish_result(size_cm=0.0)
             self._triggered = False
 
         else:
+            # เลือก box ที่ใหญ่สุด
             best_box = max(results.boxes,
                            key=lambda b: (b.xyxy[0][2] - b.xyxy[0][0]) *
                                          (b.xyxy[0][3] - b.xyxy[0][1]))
 
             x1, y1, x2, y2 = best_box.xyxy[0]
-
             x1 = int(x1 * scale_x)
             x2 = int(x2 * scale_x)
             y1 = int(y1 * scale_y)
@@ -138,53 +141,47 @@ class CabbageDetector(Node):
             pixel_width = x2 - x1
             size_cm     = self.estimate_size(pixel_width)
 
+            # วาด bbox + ขนาด
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
             cv2.putText(frame, f"{size_cm:.1f} cm", (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
 
             if top_bound <= center_y <= bottom_bound:
-
+                # อยู่ใน zone — รายงานขนาด
                 self.send_command("STOP")
                 self.get_logger().info(f"Cabbage detected — size: {size_cm:.1f} cm")
 
-                if size_cm >= self.harvest_size_cm:
-                    harvestable = 1
-                    self.get_logger().info("Status: READY TO HARVEST")
-                    cv2.putText(frame, "READY TO HARVEST", (10, 30),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
-                else:
-                    harvestable = 0
-                    self.get_logger().info("Status: NOT READY")
-                    cv2.putText(frame, "NOT READY", (10, 30),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 165, 255), 2)
+                cv2.putText(frame, f"ขนาด: {size_cm:.1f} cm", (10, 30),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 255), 2)
 
-                self._publish_result(size_cm=size_cm, harvestable=harvestable)
+                self._publish_result(size_cm=size_cm)
                 self._triggered = False
 
             else:
+                # ยังไม่อยู่ใน zone
                 self.send_command("MOVE_FORWARD")
                 cv2.putText(frame, "MOVE FORWARD", (10, 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 0), 2)
-                # Cabbage visible but not in zone yet — keep _triggered True
-                # mission_node detect timeout will handle if it never enters zone
+                cv2.putText(frame, f"ขนาด: {size_cm:.1f} cm", (10, 65),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
 
         out_msg = self.bridge.cv2_to_imgmsg(frame, encoding='bgr8')
         self.pub.publish(out_msg)
 
     # ==================================================
-    # Publish Result to mission_node
+    # Publish Result
     # ==================================================
 
-    def _publish_result(self, size_cm: float, harvestable: int):
+    def _publish_result(self, size_cm: float):
         """
-        Sends detection result to mission_node.
-        Format: "size_cm,harvestable"
-          harvestable:  1 = ready,  0 = not ready,  -1 = not detected
+        ส่งขนาดกะหล่ำให้ mission_node
+        Format: "size_cm"  เช่น "12.4"
+        ถ้าไม่พบ: "0.0"
         """
         msg      = String()
-        msg.data = f"{size_cm:.1f},{harvestable}"
+        msg.data = f"{size_cm:.1f}"
         self.detect_result_pub.publish(msg)
-        self.get_logger().info(f"Result published → {msg.data}")
+        self.get_logger().info(f"Result published → {msg.data} cm")
 
 
 def main(args=None):
