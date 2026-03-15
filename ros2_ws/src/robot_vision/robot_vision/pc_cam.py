@@ -108,7 +108,14 @@ class EnteringThread:
 
             draw_frame = frame.copy()
 
-            # -------- AprilTag --------
+            h, w = draw_frame.shape[:2]
+
+            target_x = int(w * 0.82)
+            center_frame = w // 2
+
+            tag_center = None
+
+            # ---------------- APRILTAG ----------------
 
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             tags = at_detector.detect(gray)
@@ -118,12 +125,21 @@ class EnteringThread:
                 corners = tag.corners.astype(int)
 
                 for i in range(4):
+
                     cv2.line(draw_frame,
                              tuple(corners[i]),
                              tuple(corners[(i+1)%4]),
-                             (0,255,0),2)
+                             (0,255,0),
+                             2)
 
-            # -------- YOLO --------
+                cx, cy = map(int, tag.center)
+
+                tag_center = cx
+
+                cv2.circle(draw_frame,(cx,cy),5,(0,0,255),-1)
+
+
+            # ---------------- YOLO ----------------
 
             if time.time() - self.last_infer > 0.08:
 
@@ -145,13 +161,69 @@ class EnteringThread:
 
                         cv2.rectangle(draw_frame,(x1,y1),(x2,y2),(255,0,0),2)
 
-                        cv2.putText(draw_frame,"ENTER",
+                        cv2.putText(draw_frame,
+                                    "ENTER",
                                     (x1,y1-5),
                                     cv2.FONT_HERSHEY_SIMPLEX,
                                     0.6,
-                                    (255,0,0),2)
+                                    (255,0,0),
+                                    2)
 
                 self.last_infer = time.time()
+
+
+            # ---------------- GRAPHICS ----------------
+
+            state_text = "SEARCH TAG"
+            action_text = "TRACK"
+
+            cv2.putText(draw_frame,
+                        f"STATE: {state_text}",
+                        (20,40),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.8,
+                        (0,255,0),
+                        2)
+
+            cv2.putText(draw_frame,
+                        f"ACTION: {action_text}",
+                        (20,70),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.8,
+                        (0,255,255),
+                        2)
+
+            # target line
+            cv2.line(draw_frame,
+                     (target_x,0),
+                     (target_x,h),
+                     (255,0,0),
+                     2)
+
+            # frame center
+            cv2.line(draw_frame,
+                     (center_frame,0),
+                     (center_frame,h),
+                     (0,0,255),
+                     2)
+
+            if tag_center is not None:
+
+                cv2.line(draw_frame,
+                         (tag_center,0),
+                         (tag_center,h),
+                         (0,255,255),
+                         2)
+
+                offset = tag_center - target_x
+
+                cv2.putText(draw_frame,
+                            f"OFFSET: {offset}px",
+                            (20,110),
+                            cv2.FONT_HERSHEY_SIMPLEX,
+                            0.7,
+                            (200,200,0),
+                            2)
 
             self.frame = draw_frame
 
@@ -204,11 +276,13 @@ class CabbageThread:
 
                         cv2.rectangle(draw_frame,(x1,y1),(x2,y2),(0,255,0),2)
 
-                        cv2.putText(draw_frame,"CABBAGE",
+                        cv2.putText(draw_frame,
+                                    "CABBAGE",
                                     (x1,y1-5),
                                     cv2.FONT_HERSHEY_SIMPLEX,
                                     0.6,
-                                    (0,255,0),2)
+                                    (0,255,0),
+                                    2)
 
                 self.last_infer = time.time()
 
