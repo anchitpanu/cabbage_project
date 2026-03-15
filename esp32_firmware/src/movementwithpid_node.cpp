@@ -353,7 +353,7 @@ void driveDifferential()
     integral_error = 0;
   }                                         
 
-  float LEFT_BIAS  = 0.98f;
+  float LEFT_BIAS  = 0.97f;
   float RIGHT_BIAS = 1.2f;
 
   setMotorPWM(PWM_CH_M1_A, PWM_CH_M1_B, MOTOR1_INV, left_cmd  * LEFT_BIAS);
