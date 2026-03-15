@@ -6,10 +6,10 @@ import queue
 
 app = Flask(__name__)
 
-WIDTH = 320
-HEIGHT = 240
+WIDTH = 480
+HEIGHT = 360
 FPS = 10
-JPEG_QUALITY = 15
+JPEG_QUALITY = 18
 
 # =====================
 # CAMERA SERVER CLASS
