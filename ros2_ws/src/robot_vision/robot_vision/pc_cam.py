@@ -16,7 +16,7 @@ from pupil_apriltags import Detector
 # STREAM FROM PI
 # =========================
 
-PI_IP = "10.129.196.237"
+PI_IP = "172.20.10.2"  # 10.129.196.237
 STREAM1 = f"http://{PI_IP}:5000/stream1"
 STREAM2 = f"http://{PI_IP}:5000/stream2"
 
