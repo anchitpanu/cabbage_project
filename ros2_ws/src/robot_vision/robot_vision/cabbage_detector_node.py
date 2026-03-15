@@ -14,22 +14,21 @@ class CabbageDetector(Node):
     def __init__(self):
         super().__init__('cabbage_detector')
 
-        self.model  = YOLO('/home/jorjeen/plant/cabbage_project/cab_model/best.pt')
+        # YOLO model
+        self.model = YOLO('/home/jorjeen/plant/cabbage_project/cab_model/best.pt')
+
         self.bridge = CvBridge()
 
+        # camera calibration
         self.CAMERA_HEIGHT = 32.5
         self.FOCAL_LENGTH  = 440
 
-        self.last_cmd     = ""
-        self.frame_width  = 640
-        self.frame_height = 480
-
         self._triggered = False
 
-        # -------- Subscribers --------
+        # subscribers
         self.create_subscription(
             Image,
-            '/camera2/image_raw',        
+            '/camera2/image_raw',
             self.image_callback,
             1)
 
@@ -39,156 +38,116 @@ class CabbageDetector(Node):
             self.detect_trigger_callback,
             10)
 
-        # -------- Publishers --------
-        self.pub = self.create_publisher(
+        # publishers
+        self.image_pub = self.create_publisher(
             Image,
-            '/camera2/image_detected',   
+            '/camera2/image_detected',
             10)
 
-        # Format: "size_cm"  เช่น "12.4"
-        # ถ้าไม่พบ: "0.0"
-        self.detect_result_pub = self.create_publisher(
+        self.result_pub = self.create_publisher(
             String,
             '/quin/detect_result',
             10)
 
-        self.get_logger().info('Cabbage Detector started — waiting for /quin/detect_trigger...')
+        self.get_logger().info("Cabbage detector ready")
 
-    # ==================================================
-    # Trigger
-    # ==================================================
+    # -------------------------------------------------
 
-    def detect_trigger_callback(self, msg: Bool):
-        if not msg.data:
-            return
-        if self._triggered:
-            self.get_logger().warn("Already scanning — duplicate trigger ignored")
-            return
-        self._triggered = True
-        self.get_logger().info("Detection triggered — scanning next frame...")
+    def detect_trigger_callback(self, msg):
 
-    # ==================================================
-    # Helpers
-    # ==================================================
+        if msg.data:
+            self._triggered = True
+            self.get_logger().info("Detection triggered")
 
-    def send_command(self, cmd):
-        if cmd != self.last_cmd:
-            print(f"CMD: {cmd}")
-            self.last_cmd = cmd
+    # -------------------------------------------------
 
     def estimate_size(self, pixel_width):
-        return (pixel_width * self.CAMERA_HEIGHT) / self.FOCAL_LENGTH
 
-    # ==================================================
-    # Image Callback
-    # ==================================================
+        size_cm = (pixel_width * self.CAMERA_HEIGHT) / self.FOCAL_LENGTH
+
+        return size_cm
+
+    # -------------------------------------------------
 
     def image_callback(self, msg):
-        frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
-        self.frame_height, self.frame_width = frame.shape[:2]
 
-        # ไม่ถูก trigger — publish raw frame ผ่านไปเลย
+        frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+
+        # ถ้ายังไม่ trigger → แค่ส่งภาพผ่าน
         if not self._triggered:
-            out_msg = self.bridge.cv2_to_imgmsg(frame, encoding='bgr8')
-            self.pub.publish(out_msg)
+
+            out = self.bridge.cv2_to_imgmsg(frame, encoding='bgr8')
+            self.image_pub.publish(out)
             return
 
-        # ---- YOLO รันเฉพาะตอน triggered ----
-        frame_small = cv2.resize(frame, (320, 320))
-        scale_x = frame.shape[1] / 320
-        scale_y = frame.shape[0] / 320
+        # run YOLO
+        results = self.model(frame, conf=0.5, imgsz=640, device="cpu")[0]
 
-        results = self.model(
-            frame_small,
-            conf=0.5,
-            imgsz=320,
-            device="cpu",
-            verbose=False
-        )[0]
+        size_cm = 0.0
 
-        top_bound    = self.frame_height * 0.15
-        bottom_bound = self.frame_height * 0.5
+        if len(results.boxes) > 0:
 
-        cv2.line(frame, (0, int(top_bound)),
-                 (self.frame_width, int(top_bound)),    (255, 0, 0), 1)
-        cv2.line(frame, (0, int(bottom_bound)),
-                 (self.frame_width, int(bottom_bound)), (255, 0, 0), 1)
+            # เอา detection แรก
+            box = results.boxes[0]
 
-        if len(results.boxes) == 0:
-            # ไม่พบกะหล่ำ
-            self.send_command("MOVE_FORWARD")
-            cv2.putText(frame, "MOVE FORWARD", (10, 30),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 0), 2)
-            cv2.putText(frame, "ไม่พบกะหล่ำปลี", (10, 65),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+            x1, y1, x2, y2 = box.xyxy[0]
 
-            self._publish_result(size_cm=0.0)
-            self._triggered = False
+            x1 = int(x1)
+            x2 = int(x2)
+            y1 = int(y1)
+            y2 = int(y2)
+
+            pixel_width = x2 - x1
+
+            size_cm = self.estimate_size(pixel_width)
+
+            cv2.rectangle(frame,(x1,y1),(x2,y2),(0,255,0),2)
+
+            cv2.putText(
+                frame,
+                f"{size_cm:.1f} cm",
+                (x1, y1-10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.8,
+                (0,255,0),
+                2
+            )
+
+            self.get_logger().info(f"Cabbage size: {size_cm:.1f} cm")
 
         else:
-            # เลือก box ที่ใหญ่สุด
-            best_box = max(results.boxes,
-                           key=lambda b: (b.xyxy[0][2] - b.xyxy[0][0]) *
-                                         (b.xyxy[0][3] - b.xyxy[0][1]))
 
-            x1, y1, x2, y2 = best_box.xyxy[0]
-            x1 = int(x1 * scale_x)
-            x2 = int(x2 * scale_x)
-            y1 = int(y1 * scale_y)
-            y2 = int(y2 * scale_y)
+            self.get_logger().warn("No cabbage detected")
 
-            center_y    = (y1 + y2) / 2
-            pixel_width = x2 - x1
-            size_cm     = self.estimate_size(pixel_width)
+        # publish result ให้ mission node
+        msg_out = String()
 
-            # วาด bbox + ขนาด
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.putText(frame, f"{size_cm:.1f} cm", (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+        if size_cm > 0:
+            msg_out.data = f"{size_cm:.1f},1"
+        else:
+            msg_out.data = "0,-1"
 
-            if top_bound <= center_y <= bottom_bound:
-                # อยู่ใน zone — รายงานขนาด
-                self.send_command("STOP")
-                self.get_logger().info(f"Cabbage detected — size: {size_cm:.1f} cm")
+        self.result_pub.publish(msg_out)
 
-                cv2.putText(frame, f"ขนาด: {size_cm:.1f} cm", (10, 30),
-                            cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 255), 2)
+        self.get_logger().info(f"Published result: {msg_out.data}")
 
-                self._publish_result(size_cm=size_cm)
-                self._triggered = False
+        self._triggered = False
 
-            else:
-                # ยังไม่อยู่ใน zone
-                self.send_command("MOVE_FORWARD")
-                cv2.putText(frame, "MOVE FORWARD", (10, 30),
-                            cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 0), 2)
-                cv2.putText(frame, f"ขนาด: {size_cm:.1f} cm", (10, 65),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
-
-        out_msg = self.bridge.cv2_to_imgmsg(frame, encoding='bgr8')
-        self.pub.publish(out_msg)
-
-    # ==================================================
-    # Publish Result
-    # ==================================================
-
-    def _publish_result(self, size_cm: float):
-        """
-        ส่งขนาดกะหล่ำให้ mission_node
-        Format: "size_cm"  เช่น "12.4"
-        ถ้าไม่พบ: "0.0"
-        """
-        msg      = String()
-        msg.data = f"{size_cm:.1f}"
-        self.detect_result_pub.publish(msg)
-        self.get_logger().info(f"Result published → {msg.data} cm")
+        # publish image
+        out = self.bridge.cv2_to_imgmsg(frame, encoding='bgr8')
+        self.image_pub.publish(out)
 
 
 def main(args=None):
+
     rclpy.init(args=args)
+
     node = CabbageDetector()
+
     rclpy.spin(node)
+
     node.destroy_node()
+
     rclpy.shutdown()
 
 
