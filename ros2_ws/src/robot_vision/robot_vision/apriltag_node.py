@@ -77,8 +77,8 @@ class AprilTagNode(Node):
 
         try:
             # Resize to reduce CPU load
-            frame_resized = cv2.resize(frame, (640, 480), interpolation=cv2.INTER_LINEAR)
-            gray = cv2.cvtColor(frame_resized, cv2.COLOR_BGR2GRAY)
+            frame_resized = frame
+            cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
             # Normalize contrast — helps in poor lighting
             #gray = cv2.equalizeHist(gray)

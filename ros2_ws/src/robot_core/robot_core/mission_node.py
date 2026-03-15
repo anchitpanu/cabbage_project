@@ -2,6 +2,7 @@ import os
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Int32MultiArray, Bool, Float32, String
+from rclpy.qos import QoSProfile, ReliabilityPolicy
 from enum import Enum, auto
 from datetime import datetime
 
@@ -9,10 +10,10 @@ from datetime import datetime
 class State(Enum):
     IDLE        = auto()
     ENTERING    = auto()
-    RESETTING   = auto()   # waiting for encoder reset confirmation
+    RESETTING   = auto()
     MOVING      = auto()
     PLANTING    = auto()
-    DETECTING   = auto()   # waiting for cabbage detection result
+    DETECTING   = auto()
     DONE        = auto()
     ABORTED     = auto()
 
@@ -34,18 +35,17 @@ class MissionNode(Node):
         self.cabbage_index  = 0
 
         # ---------------- Cabbage Zone Distance Tracking ----------------
-        # Robot stops cabbage loop when cumulative distance >= 170 cm
         self.CABBAGE_ZONE_MAX_CM   = 170.0
         self.cabbage_cumulative_cm = 0.0
 
         # ---------------- Cabbage Log ----------------
-        self.cabbage_log = []   # list of dicts: {index, size_cm, harvestable, status}
+        self.cabbage_log = []
 
         # ---------------- Robot Ready Flag ----------------
         self._robot_ready = False
 
         # ---------------- Timeout Settings ----------------
-        self.PLANT_TIMEOUT   = 10.0
+        self.PLANT_TIMEOUT   = 60.0
         self.MOVE_TIMEOUT    = 60.0
         self.ENTRY_TIMEOUT   = 60.0
         self.RESET_TIMEOUT   = 10.0
@@ -64,6 +64,12 @@ class MissionNode(Node):
         self._expecting_robot_ready  = False
         self._expecting_detect_done  = False
 
+        # ---------------- QoS ----------------
+        esp_qos = QoSProfile(
+            depth=10,
+            reliability=ReliabilityPolicy.BEST_EFFORT
+        )
+
         # ---------------- Publishers ----------------
         self.move_cmd_pub = self.create_publisher(
             Float32, '/quin/cmd_move', 10)
@@ -80,11 +86,9 @@ class MissionNode(Node):
         self.reset_trigger_pub = self.create_publisher(
             Bool, '/quin/trigger_reset', 10)
 
-        # Tells cabbage_detector to run one detection scan
         self.detect_trigger_pub = self.create_publisher(
             Bool, '/quin/detect_trigger', 10)
 
-        # Publishes latest cabbage log as JSON string for dashboard
         self.cabbage_log_pub = self.create_publisher(
             String, '/quin/cabbage_log', 10)
 
@@ -109,15 +113,11 @@ class MissionNode(Node):
             Bool, '/quin/mission_restart',
             self.mission_restart_callback, 10)
 
+        # Subscribe โดยตรงจาก ESP32 ด้วย BEST_EFFORT
         self.create_subscription(
             Bool, '/quin/robot_ready',
-            self.robot_ready_callback, 10)
+            self.robot_ready_callback, esp_qos)
 
-        # Receives detection result from cabbage_detector
-        # String format: "size_cm,harvestable"
-        #   e.g. "12.4,0"  → 12.4 cm, not harvestable
-        #        "18.7,1"  → 18.7 cm, harvestable
-        #        "0.0,-1"  → not detected
         self.create_subscription(
             String, '/quin/detect_result',
             self.detect_result_callback, 10)
@@ -142,8 +142,9 @@ class MissionNode(Node):
             f"Parameters loaded → AB={self.AB:.3f} m  C={self.C:.3f} m  DE={self.DE:.3f} m"
         )
 
-        # After params received → enter planting box first
-        self._start_entry_phase()
+        # self._start_entry_phase()
+
+        self._trigger_reset()        
 
     # ==================================================
     # Entry Phase
@@ -269,17 +270,6 @@ class MissionNode(Node):
     # ==================================================
 
     def advance_mission(self):
-        """
-        Step 0  → Move AB  (seed 1 approach)
-        Step 1  → Plant seed 1
-        Step 2  → Move AB  (seed 2 approach)
-        Step 3  → Plant seed 2
-        Step 4  → Move C + 0.30  (transition to cabbage zone)
-        Step 5+ → Cabbage loop:
-                    DETECT → log size/harvestable → Move DE
-                    Repeat until cumulative distance >= 170 cm
-        Final   → Save log file → Mission complete
-        """
         if not self.params_received:
             self._abort("Parameters missing")
             return
@@ -312,7 +302,6 @@ class MissionNode(Node):
             self.send_move(self.C + 0.30)
 
         elif step >= 5:
-            # ---- Cabbage loop: detect first, move after result ----
             if self.cabbage_cumulative_cm < self.CABBAGE_ZONE_MAX_CM:
                 self.cabbage_index += 1
                 self.get_logger().info(
@@ -321,7 +310,6 @@ class MissionNode(Node):
                 )
                 self.do_detect()
             else:
-                # ---- End of cabbage zone ----
                 self._save_log_file()
                 self.state = State.DONE
                 self.get_logger().info("Mission Complete")
@@ -357,7 +345,6 @@ class MissionNode(Node):
 
         self.get_logger().info("Move confirmed done")
 
-        # Track cumulative distance only while in cabbage zone (step >= 5)
         if self.mission_step >= 5:
             self.cabbage_cumulative_cm += self.DE * 100.0
             self.get_logger().info(
@@ -417,7 +404,6 @@ class MissionNode(Node):
     # ==================================================
 
     def do_detect(self):
-        """Trigger cabbage_detector to run one scan and wait for result."""
         self.state = State.DETECTING
         self._expecting_detect_done = True
 
@@ -429,13 +415,6 @@ class MissionNode(Node):
         self._detect_timer = self.create_timer(self.DETECT_TIMEOUT, self._detect_timeout_cb)
 
     def detect_result_callback(self, msg: String):
-        """
-        Receives result from cabbage_detector node.
-        Expected format: "size_cm,harvestable"
-          "12.4,0"  → 12.4 cm, not harvestable
-          "18.7,1"  → 18.7 cm, harvestable
-          "0.0,-1"  → not detected
-        """
         if not self._expecting_detect_done:
             self.get_logger().warn("Stale /quin/detect_result received — ignored")
             return
@@ -472,10 +451,7 @@ class MissionNode(Node):
             f"Cabbage {self.cabbage_index}: {size_cm:.1f} cm — {status_str}"
         )
 
-        # Push updated log to dashboard
         self._publish_cabbage_log()
-
-        # After detection → move DE to next cabbage
         self.send_move(self.DE)
 
     def _detect_timeout_cb(self):
@@ -486,7 +462,6 @@ class MissionNode(Node):
         self._detect_timer = None
         self._expecting_detect_done = False
 
-        # Log as not detected and continue — don't abort the whole mission
         entry = {
             'index':       self.cabbage_index,
             'size_cm':     0.0,
@@ -501,7 +476,7 @@ class MissionNode(Node):
         self.send_move(self.DE)
 
     # ==================================================
-    # Cabbage Log — Publish to Dashboard
+    # Cabbage Log
     # ==================================================
 
     def _publish_cabbage_log(self):
@@ -509,10 +484,6 @@ class MissionNode(Node):
         msg      = String()
         msg.data = json.dumps(self.cabbage_log)
         self.cabbage_log_pub.publish(msg)
-
-    # ==================================================
-    # Cabbage Log — Save to File
-    # ==================================================
 
     def _save_log_file(self):
         timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
@@ -559,7 +530,6 @@ class MissionNode(Node):
         self._expecting_robot_ready  = False
         self._expecting_detect_done  = False
 
-        # Save partial log if any cabbages were already scanned
         if self.cabbage_log:
             self.get_logger().info("Saving partial cabbage log before abort...")
             self._save_log_file()

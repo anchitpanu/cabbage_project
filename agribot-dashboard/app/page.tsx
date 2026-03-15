@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import * as ROSLIB from "roslib";
+import ROSLIB from "roslib";
 import {
   Camera, Gauge, PlugZap, Satellite, Signal, Leaf,
   Ruler, Activity, Navigation, Cpu, Zap, CheckCircle2,

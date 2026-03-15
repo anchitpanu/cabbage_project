@@ -15,11 +15,12 @@ class PlantNode(Node):
             6,  # stepper up
             2,  # gripper close
             3,  # feeder open
-            5,  # stepper down
-            1,  # gripper open
-            6,  # stepper up
-            2,  # gripper close
             4   # feeder close
+
+            # 5,  # stepper down
+            # 1,  # gripper open
+            # 6,  # stepper up
+            # 2,  # gripper close
         ]
 
         # test basic planting

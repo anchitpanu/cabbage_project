@@ -1,14 +1,3 @@
-# quin T1 :
-# ros2 run usb_cam usb_cam_node_exe --ros-args \
-# -p video_device:=/dev/video2 \
-# -r __ns:=/camera2 \
-# -p image_width:=320 \
-# -p image_height:=240
-
-# quin T2 : ros2 run web_video_server web_video_server
-# web : http://10.129.196.237:8080/stream?topic=/camera2/image_detected
-
-
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
@@ -34,8 +23,7 @@ class CabbageDetector(Node):
         self.frame_width  = 640
         self.frame_height = 480
 
-        # -------- Trigger flag --------
-        # True only when mission_node requests a single detection scan
+        # Trigger flag — True only when mission_node requests a detection scan
         self._triggered = False
 
         # -------- Subscribers --------
@@ -51,7 +39,7 @@ class CabbageDetector(Node):
             '/quin/detect_trigger',
             self.detect_trigger_callback,
             10)
-    
+
         # -------- Publishers --------
         self.pub = self.create_publisher(Image, '/camera1/image_detected', 10)
 
@@ -99,7 +87,13 @@ class CabbageDetector(Node):
         frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
         self.frame_height, self.frame_width = frame.shape[:2]
 
-        # Resize for YOLO
+        # Not triggered — just publish raw frame, skip YOLO entirely
+        if not self._triggered:
+            out_msg = self.bridge.cv2_to_imgmsg(frame, encoding='bgr8')
+            self.pub.publish(out_msg)
+            return
+
+        # ---- YOLO runs only when triggered ----
         frame_small = cv2.resize(frame, (320, 320))
         scale_x = frame.shape[1] / 320
         scale_y = frame.shape[0] / 320
@@ -124,10 +118,9 @@ class CabbageDetector(Node):
             cv2.putText(frame, "MOVE FORWARD", (10, 30),
                         cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 0), 2)
 
-            # If triggered but nothing detected → report not detected
-            if self._triggered:
-                self._publish_result(size_cm=0.0, harvestable=-1)
-                self._triggered = False
+            # Triggered but nothing detected → report not detected
+            self._publish_result(size_cm=0.0, harvestable=-1)
+            self._triggered = False
 
         else:
             best_box = max(results.boxes,
@@ -165,18 +158,15 @@ class CabbageDetector(Node):
                     cv2.putText(frame, "NOT READY", (10, 30),
                                 cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 165, 255), 2)
 
-                # Publish result back to mission_node if this was a triggered scan
-                if self._triggered:
-                    self._publish_result(size_cm=size_cm, harvestable=harvestable)
-                    self._triggered = False
+                self._publish_result(size_cm=size_cm, harvestable=harvestable)
+                self._triggered = False
 
             else:
                 self.send_command("MOVE_FORWARD")
                 cv2.putText(frame, "MOVE FORWARD", (10, 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 0), 2)
-
-                # Cabbage visible but not in detection zone yet — keep waiting
-                # (mission_node detect timeout will handle if it never enters zone)
+                # Cabbage visible but not in zone yet — keep _triggered True
+                # mission_node detect timeout will handle if it never enters zone
 
         out_msg = self.bridge.cv2_to_imgmsg(frame, encoding='bgr8')
         self.pub.publish(out_msg)

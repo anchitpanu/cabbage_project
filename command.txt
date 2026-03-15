@@ -1,5 +1,6 @@
 pi-ip : 10.129.196.237  -- earn's hotspot
         172.20.10.2     -- jeen's hotspot
+        192.168.1.100   -- router
 
 
 -- ESP32
@@ -8,6 +9,15 @@ One : ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyUSB1
 
 -- manually reset distance
 reset distance zero : ros2 topic pub --once /quin/reset_distance std_msgs/msg/Bool "data: true"
+
+-- test manual
+ros2 topic pub --once /microros/actuator_cmd std_msgs/msg/Int32 "{data: 4}"
+
+ros2 topic pub --once /plant_cmd std_msgs/msg/Bool "{data: true}"
+
+
+
+
 
 
 
@@ -24,6 +34,7 @@ web dashboard
         -p image_width:=320 \
         -p image_height:=240 \
         -p framerate:=10.0
+        -p pixel_format:=mjpeg2rgb
 
 **top camera
 -T4: ros2 run usb_cam usb_cam_node_exe --ros-args \
@@ -32,6 +43,7 @@ web dashboard
         -p image_width:=320 \
         -p image_height:=240
         -p framerate:=10.0
+        -p pixel_format:=mjpeg2rgb
 
 
 @pc
@@ -48,6 +60,13 @@ clean pi
 - pkill -f ros
 - sudo systemctl restart systemd-logind
 
+
+find launch didn't close properly
+- lsof -i :9090
+- kill -9 32451
+
+- pkill -f rosbridge
+- pkill -f usb_cam
 
 
 
