@@ -43,7 +43,7 @@ class FreshFrame:
 
     def __init__(self, url):
 
-        self.cap = cv2.VideoCapture(url)
+        self.cap = cv2.VideoCapture(url, cv2.CAP_FFMPEG)
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
         self.lock = threading.Lock()
@@ -217,11 +217,13 @@ def main():
 
         if entering_thread.frame is not None:
 
-            cv2.imshow("Camera1 - AprilTag + Enter", entering_thread.frame)
+            display1 = cv2.resize(entering_thread.frame, (400,300))
+            cv2.imshow("Camera1 - AprilTag + Enter", display1)
 
         if cabbage_thread.frame is not None:
 
-            cv2.imshow("Camera2 - Cabbage", cabbage_thread.frame)
+            display2 = cv2.resize(cabbage_thread.frame, (400,300))
+            cv2.imshow("Camera2 - Cabbage", display2)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
