@@ -1,5 +1,4 @@
 import cv2
-import numpy as np
 import threading
 import time
 import os
@@ -7,16 +6,18 @@ import os
 from ultralytics import YOLO
 from pupil_apriltags import Detector
 
+
 # =========================
 # STREAM FROM PI
 # =========================
 
 PI_IP = "10.129.196.237"
 
-STREAM1 = f"http://10.129.196.237:5000/stream1"
-STREAM2 = f"http://10.129.196.237:5000/stream2"
+STREAM1 = f"http://{PI_IP}:5000/stream1"
+STREAM2 = f"http://{PI_IP}:5000/stream2"
 
 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "timeout;3000000"
+
 
 # =========================
 # LOAD MODELS
@@ -25,6 +26,7 @@ os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "timeout;3000000"
 enter_model = YOLO('/home/jorjeen/plant/cabbage_project/entering_model/enterbest.pt')
 cabbage_model = YOLO('/home/jorjeen/plant/cabbage_project/cab_model/best.pt')
 
+
 # =========================
 # APRILTAG DETECTOR
 # =========================
@@ -32,11 +34,12 @@ cabbage_model = YOLO('/home/jorjeen/plant/cabbage_project/cab_model/best.pt')
 at_detector = Detector(
     families="tagStandard52h13",
     nthreads=4,
-    quad_decimate=2.0,
+    quad_decimate=2.0
 )
 
+
 # =========================
-# FRESH FRAME CLASS
+# FRESH FRAME READER
 # =========================
 
 class FreshFrame:
@@ -61,10 +64,11 @@ class FreshFrame:
             ret, frame = self.cap.read()
 
             if ret:
-
                 with self.lock:
                     self.latest_frame = frame
                     self.has_frame = True
+
+            time.sleep(0.001)
 
     def read(self):
 
@@ -74,6 +78,7 @@ class FreshFrame:
                 return False, None
 
             return True, self.latest_frame.copy()
+
 
 # =========================
 # THREAD 1
@@ -88,6 +93,7 @@ class EnteringThread:
         self.frame = None
 
         self.running = True
+        self.last_infer = 0
 
         threading.Thread(target=self.run, daemon=True).start()
 
@@ -100,8 +106,11 @@ class EnteringThread:
             if not ret:
                 continue
 
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            draw_frame = frame.copy()
 
+            # -------- AprilTag --------
+
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             tags = at_detector.detect(gray)
 
             for tag in tags:
@@ -109,39 +118,43 @@ class EnteringThread:
                 corners = tag.corners.astype(int)
 
                 for i in range(4):
-
-                    cv2.line(frame,
+                    cv2.line(draw_frame,
                              tuple(corners[i]),
                              tuple(corners[(i+1)%4]),
                              (0,255,0),2)
 
-            # YOLO entering
-            results = enter_model(
-                frame,
-                imgsz=320,
-                conf=0.25,
-                stream=True,
-                verbose=False
-    )
+            # -------- YOLO --------
 
-            for r in results:
+            if time.time() - self.last_infer > 0.08:
 
-                boxes = r.boxes.xyxy.cpu().numpy()
+                results = enter_model(
+                    frame,
+                    imgsz=320,
+                    conf=0.25,
+                    device="cpu",
+                    verbose=False
+                )[0]
 
-                for box in boxes:
+                boxes = results.boxes
 
-                    x1,y1,x2,y2 = map(int,box)
+                if boxes is not None:
 
-                    cv2.rectangle(frame,(x1,y1),(x2,y2),(255,0,0),2)
+                    for box in boxes.xyxy:
 
-                    cv2.putText(frame,"ENTER",
-                                (x1,y1-5),
-                                cv2.FONT_HERSHEY_SIMPLEX,
-                                0.6,
-                                (255,0,0),
-                                2)
+                        x1,y1,x2,y2 = map(int,box)
 
-            self.frame = frame
+                        cv2.rectangle(draw_frame,(x1,y1),(x2,y2),(255,0,0),2)
+
+                        cv2.putText(draw_frame,"ENTER",
+                                    (x1,y1-5),
+                                    cv2.FONT_HERSHEY_SIMPLEX,
+                                    0.6,
+                                    (255,0,0),2)
+
+                self.last_infer = time.time()
+
+            self.frame = draw_frame
+
 
 # =========================
 # THREAD 2
@@ -156,6 +169,7 @@ class CabbageThread:
         self.frame = None
 
         self.running = True
+        self.last_infer = 0
 
         threading.Thread(target=self.run, daemon=True).start()
 
@@ -168,32 +182,38 @@ class CabbageThread:
             if not ret:
                 continue
 
-            results = cabbage_model(
-                frame,
-                imgsz=320,
-                conf=0.25,
-                stream=True,
-                verbose=False
-    )
+            draw_frame = frame.copy()
 
-            for r in results:
+            if time.time() - self.last_infer > 0.08:
 
-                boxes = r.boxes.xyxy.cpu().numpy()
+                results = cabbage_model(
+                    frame,
+                    imgsz=320,
+                    conf=0.25,
+                    device="cpu",
+                    verbose=False
+                )[0]
 
-                for box in boxes:
+                boxes = results.boxes
 
-                    x1,y1,x2,y2 = map(int,box)
+                if boxes is not None:
 
-                    cv2.rectangle(frame,(x1,y1),(x2,y2),(0,255,0),2)
+                    for box in boxes.xyxy:
 
-                    cv2.putText(frame,"CABBAGE",
-                                (x1,y1-5),
-                                cv2.FONT_HERSHEY_SIMPLEX,
-                                0.6,
-                                (0,255,0),
-                                2)
+                        x1,y1,x2,y2 = map(int,box)
 
-            self.frame = frame
+                        cv2.rectangle(draw_frame,(x1,y1),(x2,y2),(0,255,0),2)
+
+                        cv2.putText(draw_frame,"CABBAGE",
+                                    (x1,y1-5),
+                                    cv2.FONT_HERSHEY_SIMPLEX,
+                                    0.6,
+                                    (0,255,0),2)
+
+                self.last_infer = time.time()
+
+            self.frame = draw_frame
+
 
 # =========================
 # MAIN
@@ -213,22 +233,35 @@ def main():
     entering_thread = EnteringThread(stream1)
     cabbage_thread = CabbageThread(stream2)
 
+    fps_time = time.time()
+    fps_counter = 0
+
     while True:
 
         if entering_thread.frame is not None:
 
-            display1 = cv2.resize(entering_thread.frame, (400,300))
-            cv2.imshow("Camera1 - AprilTag + Enter", display1)
+            display1 = cv2.resize(entering_thread.frame,(400,300))
+            cv2.imshow("Camera1 - AprilTag + Enter",display1)
 
         if cabbage_thread.frame is not None:
 
-            display2 = cv2.resize(cabbage_thread.frame, (400,300))
-            cv2.imshow("Camera2 - Cabbage", display2)
+            display2 = cv2.resize(cabbage_thread.frame,(400,300))
+            cv2.imshow("Camera2 - Cabbage",display2)
+
+        fps_counter += 1
+
+        if time.time() - fps_time >= 1:
+
+            print("FPS:",fps_counter)
+
+            fps_counter = 0
+            fps_time = time.time()
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
     cv2.destroyAllWindows()
+
 
 if __name__ == "__main__":
     main()
