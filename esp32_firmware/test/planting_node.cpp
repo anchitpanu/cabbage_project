@@ -56,7 +56,7 @@ constexpr uint32_t STEP_DELAY_US = 700;    // ความเร็ว
 // ═══════════════════════════════════════════════════════════════════
 constexpr uint8_t GRIPPER_OPEN_DEG  = 90;
 constexpr uint8_t GRIPPER_CLOSE_DEG = 135;
-constexpr uint8_t FEEDER_OPEN_DEG   = 150;
+constexpr uint8_t FEEDER_OPEN_DEG   = 180;
 constexpr uint8_t FEEDER_CLOSE_DEG  = 90;
 
 constexpr uint32_t SERVO_SETTLE_MS = 1800;

@@ -15,7 +15,9 @@ ROBOT ORIENTATION
 // ================= ROBOT SPECS =================
 
 #define MOTOR_MAX_RPM 60
-#define MAX_RPM_RATIO 0.85
+#define MAX_RPM_RATIO 0.35
+
+
 
 #define WHEEL_DIAMETER 0.085            // meters
 #define LR_WHEELS_DISTANCE 0.375        // meters
