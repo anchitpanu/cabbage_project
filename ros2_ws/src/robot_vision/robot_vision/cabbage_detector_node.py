@@ -41,7 +41,7 @@ class CabbageDetector(Node):
         # -------- Subscribers --------
         self.create_subscription(
             Image,
-            '/camera2/image_raw',
+            '/camera1/image_raw',
             self.image_callback,
             1)
 
@@ -53,7 +53,7 @@ class CabbageDetector(Node):
             10)
     
         # -------- Publishers --------
-        self.pub = self.create_publisher(Image, '/camera2/image_detected', 10)
+        self.pub = self.create_publisher(Image, '/camera1/image_detected', 10)
 
         # Sends result back to mission_node
         # Format: "size_cm,harvestable"

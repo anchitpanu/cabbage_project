@@ -62,7 +62,7 @@ ROBOT ORIENTATION
 #define MOTOR1_ENCODER_INV true
 #define MOTOR2_ENCODER_INV true
 #define MOTOR3_ENCODER_INV true
-#define MOTOR4_ENCODER_INV false
+#define MOTOR4_ENCODER_INV true
 
 
 // ================= ENCODER PINS =================

@@ -47,8 +47,8 @@ constexpr uint8_t PIN_FEEDER  = 19;
 // ═══════════════════════════════════════════════════════════════════
 // STEPPER PARAMETERS
 // ═══════════════════════════════════════════════════════════════════
-constexpr uint32_t STEPS_DOWN    = 4750;   // ระยะลง
-constexpr uint32_t STEPS_UP      = 4600;   // ระยะขึ้น
+constexpr uint32_t STEPS_DOWN    = 4670;   // ระยะลง
+constexpr uint32_t STEPS_UP      = 4520;   // ระยะขึ้น
 constexpr uint32_t STEP_DELAY_US = 700;    // ความเร็ว
 
 // ═══════════════════════════════════════════════════════════════════
@@ -56,10 +56,10 @@ constexpr uint32_t STEP_DELAY_US = 700;    // ความเร็ว
 // ═══════════════════════════════════════════════════════════════════
 constexpr uint8_t GRIPPER_OPEN_DEG  = 90;
 constexpr uint8_t GRIPPER_CLOSE_DEG = 135;
-constexpr uint8_t FEEDER_OPEN_DEG   = 180;
+constexpr uint8_t FEEDER_OPEN_DEG   = 150;
 constexpr uint8_t FEEDER_CLOSE_DEG  = 90;
 
-constexpr uint32_t SERVO_SETTLE_MS = 1000;
+constexpr uint32_t SERVO_SETTLE_MS = 1800;
 
 // ═══════════════════════════════════════════════════════════════════
 // HARDWARE
@@ -141,33 +141,36 @@ static void executeCommand(int cmd) {
   switch (cmd) {
 
     case CMD_GRIPPER_OPEN:
+      delay(200);
       gripper.write(GRIPPER_OPEN_DEG);
-      g_settle_end = millis() + SERVO_SETTLE_MS;
+      g_settle_end = millis() + SERVO_SETTLE_MS + 2000;
       break;
 
     case CMD_GRIPPER_CLOSE:
+      delay(200);  
       gripper.write(GRIPPER_CLOSE_DEG);
-      g_settle_end = millis() + SERVO_SETTLE_MS;
+      g_settle_end = millis() + SERVO_SETTLE_MS + 1000;
       break;
 
     case CMD_FEEDER_OPEN:
       feeder.write(FEEDER_OPEN_DEG);
-      g_settle_end = millis() + SERVO_SETTLE_MS;
+      delay(200);      
+      g_settle_end = millis() + SERVO_SETTLE_MS + 2000;
       break;
 
     case CMD_FEEDER_CLOSE:
       feeder.write(FEEDER_CLOSE_DEG);
-      g_settle_end = millis() + SERVO_SETTLE_MS;
+      g_settle_end = millis() + SERVO_SETTLE_MS + 1000;
       break;
 
     case CMD_STEPPER_DOWN:
       stepperMove(true);
-      g_settle_end = millis();
+      g_settle_end = millis() +1000;
       break;
 
     case CMD_STEPPER_UP:
       stepperMove(false);
-      g_settle_end = millis();
+      g_settle_end = millis() +1000;
       break;
 
     default:
@@ -266,6 +269,7 @@ void loop() {
 
   if (millis() < g_settle_end) return;
 
+  delay(200);  
   publishAck(true);
 
   g_busy = false;

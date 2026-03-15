@@ -17,14 +17,14 @@
 
 #define CMD_TIMEOUT_MS 500
 #define CONTROL_PERIOD 20   // ms
+#define TICK_THRESHOLD 3    // ticks น้อยกว่านี้ถือว่า noise → ไม่นับระยะ
 
-// MAX_LINEAR_SPEED = (60rpm / 60) * pi * 0.085m ≈ 0.267 m/s
 const float MAX_LINEAR_SPEED = (MOTOR_MAX_RPM / 60.0f) * (M_PI * WHEEL_DIAMETER);
 
-//ADJUST VALUE HERE
-float KP_STRAIGHT = 0.015;   
-float KI_STRAIGHT = 0.0002;    
-float KD_STRAIGHT = 0.001;   
+// ADJUST VALUE HERE
+float KP_STRAIGHT = 0.015;
+float KI_STRAIGHT = 0.0002;
+float KD_STRAIGHT = 0.001;
 
 float ENCODER_FILTER = 0.7;
 const float INTEGRAL_LIMIT = 30.0;
@@ -54,6 +54,9 @@ std_msgs__msg__Float32 debug_dl_msg;
 std_msgs__msg__Float32 debug_dr_msg;
 std_msgs__msg__Float32 debug_err_msg;
 std_msgs__msg__Float32 debug_corr_msg;
+
+rcl_publisher_t robot_ready_publisher;
+std_msgs__msg__Bool robot_ready_msg;
 
 rcl_subscription_t motor_subscriber;
 geometry_msgs__msg__Twist motor_msg;
@@ -88,63 +91,53 @@ float distance_inside_planter = 0.0;
 const float WHEEL_CIRCUMFERENCE = M_PI * WHEEL_DIAMETER;
 
 unsigned long prev_cmd_time = 0;
+bool motors_stopped = true;  // track motor state เพื่อหยุดนับระยะตอนหยุด
 
 // ================= ENCODER ISR =================
 
-  // MOTOR 1
-  void IRAM_ATTR handleEncoder_MOTOR1_A()
-  {
-    int dir = digitalRead(MOTOR1_ENCODER_PIN_B) ? 1 : -1;
-    motor1_encoder_ticks += MOTOR1_ENCODER_INV ? -dir : dir;
-  }
+void IRAM_ATTR handleEncoder_MOTOR1_A()
+{
+  int dir = digitalRead(MOTOR1_ENCODER_PIN_B) ? 1 : -1;
+  motor1_encoder_ticks += MOTOR1_ENCODER_INV ? -dir : dir;
+}
+void IRAM_ATTR handleEncoder_MOTOR1_B()
+{
+  int dir = digitalRead(MOTOR1_ENCODER_PIN_A) ? -1 : 1;
+  motor1_encoder_ticks += MOTOR1_ENCODER_INV ? -dir : dir;
+}
 
-  void IRAM_ATTR handleEncoder_MOTOR1_B()
-  {
-    int dir = digitalRead(MOTOR1_ENCODER_PIN_A) ? -1 : 1;
-    motor1_encoder_ticks += MOTOR1_ENCODER_INV ? -dir : dir;
-  }
+void IRAM_ATTR handleEncoder_MOTOR2_A()
+{
+  int dir = digitalRead(MOTOR2_ENCODER_PIN_B) ? 1 : -1;
+  motor2_encoder_ticks += MOTOR2_ENCODER_INV ? -dir : dir;
+}
+void IRAM_ATTR handleEncoder_MOTOR2_B()
+{
+  int dir = digitalRead(MOTOR2_ENCODER_PIN_A) ? -1 : 1;
+  motor2_encoder_ticks += MOTOR2_ENCODER_INV ? -dir : dir;
+}
 
+void IRAM_ATTR handleEncoder_MOTOR3_A()
+{
+  int dir = digitalRead(MOTOR3_ENCODER_PIN_B) ? 1 : -1;
+  motor3_encoder_ticks += MOTOR3_ENCODER_INV ? -dir : dir;
+}
+void IRAM_ATTR handleEncoder_MOTOR3_B()
+{
+  int dir = digitalRead(MOTOR3_ENCODER_PIN_A) ? -1 : 1;
+  motor3_encoder_ticks += MOTOR3_ENCODER_INV ? -dir : dir;
+}
 
-  // MOTOR 2
-  void IRAM_ATTR handleEncoder_MOTOR2_A()
-  {
-    int dir = digitalRead(MOTOR2_ENCODER_PIN_B) ? 1 : -1;
-    motor2_encoder_ticks += MOTOR2_ENCODER_INV ? -dir : dir;
-  }
-
-  void IRAM_ATTR handleEncoder_MOTOR2_B()
-  {
-    int dir = digitalRead(MOTOR2_ENCODER_PIN_A) ? -1 : 1;
-    motor2_encoder_ticks += MOTOR2_ENCODER_INV ? -dir : dir;
-  }
-
-
-  // MOTOR 3
-  void IRAM_ATTR handleEncoder_MOTOR3_A()
-  {
-    int dir = digitalRead(MOTOR3_ENCODER_PIN_B) ? 1 : -1;
-    motor3_encoder_ticks += MOTOR3_ENCODER_INV ? -dir : dir;
-  }
-
-  void IRAM_ATTR handleEncoder_MOTOR3_B()
-  {
-    int dir = digitalRead(MOTOR3_ENCODER_PIN_A) ? -1 : 1;
-    motor3_encoder_ticks += MOTOR3_ENCODER_INV ? -dir : dir;
-  }
-
-
-  // MOTOR 4
-  void IRAM_ATTR handleEncoder_MOTOR4_A()
-  {
-    int dir = digitalRead(MOTOR4_ENCODER_PIN_B) ? 1 : -1;
-    motor4_encoder_ticks += MOTOR4_ENCODER_INV ? -dir : dir;
-  }
-
-  void IRAM_ATTR handleEncoder_MOTOR4_B()
-  {
-    int dir = digitalRead(MOTOR4_ENCODER_PIN_A) ? -1 : 1;
-    motor4_encoder_ticks += MOTOR4_ENCODER_INV ? -dir : dir;
-  }
+void IRAM_ATTR handleEncoder_MOTOR4_A()
+{
+  int dir = digitalRead(MOTOR4_ENCODER_PIN_B) ? 1 : -1;
+  motor4_encoder_ticks += MOTOR4_ENCODER_INV ? -dir : dir;
+}
+void IRAM_ATTR handleEncoder_MOTOR4_B()
+{
+  int dir = digitalRead(MOTOR4_ENCODER_PIN_A) ? -1 : 1;
+  motor4_encoder_ticks += MOTOR4_ENCODER_INV ? -dir : dir;
+}
 
 // ================= Forward declarations =================
 
@@ -260,6 +253,9 @@ void resetCallback(const void *msgin)
     integral_error = 0;
     prev_left_ticks  = 0;
     prev_right_ticks = 0;
+
+    robot_ready_msg.data = true;
+    rcl_publish(&robot_ready_publisher , &robot_ready_msg, NULL);
   }
 }
 
@@ -277,7 +273,6 @@ void controlCallback(rcl_timer_t *timer, int64_t last_call_time)
 }
 
 // ================= DRIVE =================
-
 void driveDifferential()
 {
   if (millis() - prev_cmd_time > CMD_TIMEOUT_MS)
@@ -286,11 +281,14 @@ void driveDifferential()
     setMotorPWM(PWM_CH_M2_A, PWM_CH_M2_B, MOTOR2_INV, 0);
     setMotorPWM(PWM_CH_M3_A, PWM_CH_M3_B, MOTOR3_INV, 0);
     setMotorPWM(PWM_CH_M4_A, PWM_CH_M4_B, MOTOR4_INV, 0);
+    motors_stopped = true;
     return;
-  }
+  }                                         // ← ปิดแค่ if block
 
   float Vx = motor_msg.linear.x;
   float Wz = motor_msg.angular.z;
+
+  motors_stopped = (fabsf(Vx) < 0.01f && fabsf(Wz) < 0.01f);
 
   float left_cmd  = (Vx - Wz * LR_WHEELS_DISTANCE * 0.5f) / MAX_LINEAR_SPEED;
   float right_cmd = (Vx + Wz * LR_WHEELS_DISTANCE * 0.5f) / MAX_LINEAR_SPEED;
@@ -298,8 +296,7 @@ void driveDifferential()
   left_cmd  = constrain(left_cmd,  -MAX_RPM_RATIO, MAX_RPM_RATIO);
   right_cmd = constrain(right_cmd, -MAX_RPM_RATIO, MAX_RPM_RATIO);
 
-  bool is_straight = (fabs(Wz) < 0.05 && fabs(Vx) > 0.01);
-
+  bool is_straight = (fabsf(Wz) < 0.05f && fabsf(Vx) > 0.01f);
   float correction = 0;
 
   if (is_straight)
@@ -313,12 +310,9 @@ void driveDifferential()
     prev_left_ticks  = left_ticks;
     prev_right_ticks = right_ticks;
 
-    float LEFT_SCALE  = 1.0;
-    float RIGHT_SCALE = 0.27; 
-
-    float left_speed  = d_left;
-    float right_speed = d_right * RIGHT_SCALE;
-
+    float RIGHT_SCALE = 0.27;
+    float left_speed  = (float)d_left;
+    float right_speed = (float)d_right * RIGHT_SCALE;
     float error = right_speed - left_speed;
 
     filtered_error = ENCODER_FILTER * filtered_error +
@@ -330,61 +324,58 @@ void driveDifferential()
     float derivative = filtered_error - prev_error;
     prev_error = filtered_error;
 
-    correction =
-        KP_STRAIGHT * filtered_error +
-        KI_STRAIGHT * integral_error +
-        KD_STRAIGHT * derivative;
-
-    correction = constrain(correction, -0.3, 0.3);
+    correction = KP_STRAIGHT * filtered_error
+               + KI_STRAIGHT * integral_error
+               + KD_STRAIGHT * derivative;
+    correction = constrain(correction, -0.3f, 0.3f);
 
     left_cmd  -= correction;
     right_cmd += correction;
-
     left_cmd  = constrain(left_cmd,  -MAX_RPM_RATIO, MAX_RPM_RATIO);
     right_cmd = constrain(right_cmd, -MAX_RPM_RATIO, MAX_RPM_RATIO);
 
-    // motor bias compensation
-    left_cmd  *= 1.215;
-    right_cmd *= 0.99;
-
-    debug_dl_msg.data = d_left;
-    debug_dr_msg.data = d_right;
-    debug_err_msg.data = filtered_error;
+    debug_dl_msg.data   = (float)abs(d_left);
+    debug_dr_msg.data   = (float)abs(d_right);
+    debug_err_msg.data  = filtered_error;
     debug_corr_msg.data = correction;
 
-    rcl_publish(&debug_dl_publisher, &debug_dl_msg, NULL);
-    rcl_publish(&debug_dr_publisher, &debug_dr_msg, NULL);
-    rcl_publish(&debug_err_publisher, &debug_err_msg, NULL);
+    rcl_publish(&debug_dl_publisher,   &debug_dl_msg,   NULL);
+    rcl_publish(&debug_dr_publisher,   &debug_dr_msg,   NULL);
+    rcl_publish(&debug_err_publisher,  &debug_err_msg,  NULL);
     rcl_publish(&debug_corr_publisher, &debug_corr_msg, NULL);
   }
+  else
+  {
+    prev_left_ticks  = motor1_encoder_ticks + motor3_encoder_ticks;
+    prev_right_ticks = motor2_encoder_ticks + motor4_encoder_ticks;
+    filtered_error = 0;
+    prev_error     = 0;
+    integral_error = 0;
+  }                                         
 
-    setMotorPWM(PWM_CH_M1_A, PWM_CH_M1_B, MOTOR1_INV, left_cmd);
-    setMotorPWM(PWM_CH_M3_A, PWM_CH_M3_B, MOTOR3_INV, left_cmd);
-    setMotorPWM(PWM_CH_M2_A, PWM_CH_M2_B, MOTOR2_INV, right_cmd);
-    setMotorPWM(PWM_CH_M4_A, PWM_CH_M4_B, MOTOR4_INV, right_cmd);
-}
+  // ← setMotorPWM
+  setMotorPWM(PWM_CH_M1_A, PWM_CH_M1_B, MOTOR1_INV, left_cmd);
+  setMotorPWM(PWM_CH_M3_A, PWM_CH_M3_B, MOTOR3_INV, left_cmd);
+  setMotorPWM(PWM_CH_M2_A, PWM_CH_M2_B, MOTOR2_INV, right_cmd);
+  setMotorPWM(PWM_CH_M4_A, PWM_CH_M4_B, MOTOR4_INV, right_cmd);
+
+}                           
 
 // ================= MOTOR PWM (MDD3A) =================
-// Forward:  ch_a=duty, ch_b=0
-// Backward: ch_a=0,    ch_b=duty
-// Stop:     ch_a=0,    ch_b=0
 
 void setMotorPWM(int ch_a, int ch_b, bool invert, float speed)
 {
   if (invert) speed = -speed;
 
-  int duty = (int)(fabsf(speed) * 255.0f);
-  duty = constrain(duty, 0, 255);
-
   if (speed > 0.001f)
   {
-    ledcWrite(ch_a, duty);
+    ledcWrite(ch_a, 255);   // full forward
     ledcWrite(ch_b, 0);
   }
   else if (speed < -0.001f)
   {
     ledcWrite(ch_a, 0);
-    ledcWrite(ch_b, duty);
+    ledcWrite(ch_b, 255);   // full backward
   }
   else
   {
@@ -411,10 +402,19 @@ void Encoder()
 
   prev1 = t1; prev2 = t2; prev3 = t3; prev4 = t4;
 
+  // ถ้า motor หยุด → ไม่นับระยะเลย ป้องกัน noise drift
+  if (motors_stopped) return;
+
+  // กรอง noise: ticks น้อยกว่า threshold ต่อ cycle = noise → ไม่นับ
+  if (abs(d1) < TICK_THRESHOLD) d1 = 0;
+  if (abs(d2) < TICK_THRESHOLD) d2 = 0;
+  if (abs(d3) < TICK_THRESHOLD) d3 = 0;
+  if (abs(d4) < TICK_THRESHOLD) d4 = 0;
+
   float avg_ticks = (d1 + d2 + d3 + d4) / 4.0f;
   float rev       = avg_ticks / ENCODER_TICKS_PER_REV;
 
-  distance_inside_planter -= rev * WHEEL_CIRCUMFERENCE;
+  distance_inside_planter += rev * WHEEL_CIRCUMFERENCE;
 }
 
 // ================= PUBLISH =================
@@ -463,6 +463,11 @@ bool createEntities()
     ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float32),
     "/quin/debug/correction");
 
+  rclc_publisher_init_best_effort(
+    &robot_ready_publisher, &node,
+    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Bool),
+    "/quin/robot_ready");
+
   rclc_subscription_init_best_effort(
     &motor_subscriber, &node,
     ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist),
@@ -471,7 +476,7 @@ bool createEntities()
   rclc_subscription_init_best_effort(
     &reset_subscriber, &node,
     ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Bool),
-    "/quin/reset_distance");
+    "/quin/trigger_reset");
 
   rclc_timer_init_default(
     &control_timer, &support,
@@ -504,6 +509,7 @@ bool destroyEntities()
   rcl_publisher_fini(&debug_dr_publisher,   &node);
   rcl_publisher_fini(&debug_err_publisher,  &node);
   rcl_publisher_fini(&debug_corr_publisher, &node);
+  rcl_publisher_fini(&robot_ready_publisher, &node);
   rcl_subscription_fini(&motor_subscriber,  &node);
   rcl_subscription_fini(&reset_subscriber,  &node);
   rcl_timer_fini(&control_timer);
