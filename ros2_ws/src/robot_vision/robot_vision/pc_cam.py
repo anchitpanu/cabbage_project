@@ -11,10 +11,10 @@ from pupil_apriltags import Detector
 # STREAM FROM PI
 # =========================
 
-PI_IP = "pingg.local"
+PI_IP = "10.129.196.237"
 
-STREAM1 = f"http://{PI_IP}:5000/stream1"
-STREAM2 = f"http://{PI_IP}:5000/stream2"
+STREAM1 = f"http://10.129.196.237:5000/stream1"
+STREAM2 = f"http://10.129.196.237:5000/stream2"
 
 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "timeout;3000000"
 
@@ -116,7 +116,13 @@ class EnteringThread:
                              (0,255,0),2)
 
             # YOLO entering
-            results = enter_model(frame, imgsz=640, conf=0.4)
+            results = enter_model(
+                frame,
+                imgsz=320,
+                conf=0.25,
+                stream=True,
+                verbose=False
+    )
 
             for r in results:
 
@@ -162,7 +168,13 @@ class CabbageThread:
             if not ret:
                 continue
 
-            results = cabbage_model(frame, imgsz=640, conf=0.4)
+            results = cabbage_model(
+                frame,
+                imgsz=320,
+                conf=0.25,
+                stream=True,
+                verbose=False
+    )
 
             for r in results:
 

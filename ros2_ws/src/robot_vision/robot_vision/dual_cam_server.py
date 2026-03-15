@@ -8,8 +8,8 @@ app = Flask(__name__)
 
 WIDTH = 640
 HEIGHT = 480
-FPS = 15
-JPEG_QUALITY = 40
+FPS = 10
+JPEG_QUALITY = 25
 
 # =====================
 # CAMERA SERVER CLASS
@@ -27,6 +27,8 @@ class CameraServer:
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, HEIGHT)
         self.cap.set(cv2.CAP_PROP_FPS, FPS)
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+
+        self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
 
         self.lock = threading.Lock()
         self.frame = None
