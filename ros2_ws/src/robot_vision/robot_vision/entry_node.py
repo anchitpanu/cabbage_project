@@ -42,11 +42,11 @@ class EnterBox(Node):
 
         self.STATE = "WAITING"
 
-        self.curve_start = None
-        self.final_start = None
-
         self.TARGET_RATIO = 0.82
         self.FINAL_FORWARD_TIME = 1.3
+
+        self.curve_start = None
+        self.final_start = None
 
         self.lost_counter = 0
         self.tag_seen = False
@@ -55,6 +55,7 @@ class EnterBox(Node):
         self.last_center = None
 
         self.last_cmd = ""
+
         self._entry_done_sent = False
         self._completed_final_forward = False
 
@@ -62,9 +63,11 @@ class EnterBox(Node):
         self.tag_confirm_count = 0
 
         self.last_pub_time = 0.0
-        self.PUB_INTERVAL = 0.2
+        self.PUB_INTERVAL = 0.15
 
-        self.get_logger().info("Enter Box Node Started — waiting for /entry_start...")
+        self.last_infer = 0
+
+        self.get_logger().info("Enter Box Node Started — waiting for /entry_start")
 
     # -------------------------------------------------
 
@@ -80,23 +83,24 @@ class EnterBox(Node):
 
         self.STATE = "SEARCH_TAG"
 
-        self.curve_start = None
-        self.final_start = None
-
         self.lost_counter = 0
         self.tag_seen = False
+
         self.prev_center = None
         self.last_center = None
 
-        self.last_cmd = ""
         self._entry_done_sent = False
         self._completed_final_forward = False
+
         self.frame_count = 0
         self.tag_confirm_count = 0
 
     # -------------------------------------------------
 
     def send_command(self, cmd):
+
+        if cmd == self.last_cmd:
+            return
 
         self.last_cmd = cmd
 
@@ -122,10 +126,6 @@ class EnterBox(Node):
         elif cmd == "ROTATE_LEFT":
             msg.angular.z = 0.6
 
-        elif cmd == "CURVE_RIGHT":
-            msg.linear.x = 0.1
-            msg.angular.z = -0.5
-
         elif cmd == "STOP":
             msg.linear.x = 0.0
             msg.angular.z = 0.0
@@ -144,149 +144,129 @@ class EnterBox(Node):
 
         self.frame_count += 1
 
-        # --- Always publish feed regardless of STATE ---
-        cv2.putText(frame, f"STATE: {self.STATE}", (30, 40),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-
-        now = time.time()
-        if now - self.last_pub_time >= self.PUB_INTERVAL:
-            display_frame = cv2.resize(frame, (320, 240))
-            out_msg = self.bridge.cv2_to_imgmsg(display_frame, encoding='bgr8')
-            self.pub.publish(out_msg)
-            self.last_pub_time = now
-
-        # --- WAITING: nothing else to do ---
-        if self.STATE == "WAITING":
-            return
-
-        # --- STOP state ---
-        if self.STATE == "STOP":
-            self.send_command("STOP")
-            if not self._entry_done_sent:
-                done_msg = Bool()
-                done_msg.data = self._completed_final_forward
-                self.entry_done_pub.publish(done_msg)
-                self._entry_done_sent = True
-                if self._completed_final_forward:
-                    self.get_logger().info("Entry complete — published entry_done = True")
-                else:
-                    self.get_logger().warn("Entry stopped without completing — published entry_done = False")
-            return
-
-        # FIX Bug 1: ALIGN_TAG must also never skip frames
-        if self.STATE != "ALIGN_TAG":
-            if self.frame_count % 4 != 0:
-                return
-
-        frame_small = cv2.resize(frame, (256, 256))
-
-        scale_x = w / 256
-        scale_y = h / 256
-
-        results = self.model(
-            frame_small,
-            conf=0.25,
-            imgsz=192,
-            device="cpu",
-            verbose=False
-        )[0]
-
         action_text = "NONE"
+
+        # ---------------- YOLO inference (limited FPS)
+
+        run_infer = False
+
+        if time.time() - self.last_infer > 0.07:
+            run_infer = True
+            self.last_infer = time.time()
 
         tag_detected = False
         center_x = None
 
-        boxes = results.boxes
+        if run_infer:
 
-        if boxes is not None and len(boxes) > 0:
+            frame_small = cv2.resize(frame, (256, 256))
 
-            smallest_area = 999999999
-            best_box = None
+            scale_x = w / 256
+            scale_y = h / 256
 
-            for box in boxes.xyxy:
+            results = self.model(
+                frame_small,
+                conf=0.25,
+                imgsz=192,
+                device="cpu",
+                verbose=False
+            )[0]
 
-                x1, y1, x2, y2 = box
-                area = float((x2 - x1) * (y2 - y1))
+            boxes = results.boxes
 
-                if area < smallest_area:
-                    smallest_area = area
-                    best_box = box
+            if boxes is not None and len(boxes) > 0:
 
-            if best_box is not None:
+                smallest_area = 999999999
+                best_box = None
 
-                x1, y1, x2, y2 = best_box
+                for box in boxes.xyxy:
 
-                x1 = int(x1 * scale_x)
-                x2 = int(x2 * scale_x)
-                y1 = int(y1 * scale_y)
-                y2 = int(y2 * scale_y)
+                    x1, y1, x2, y2 = box
+                    area = float((x2-x1)*(y2-y1))
 
-                center_x = float((x1 + x2) / 2)
+                    if area < smallest_area:
+                        smallest_area = area
+                        best_box = box
 
-                tag_detected = True
-                self.tag_seen = True
-                self.lost_counter = 0
+                if best_box is not None:
 
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    x1,y1,x2,y2 = best_box
+
+                    x1 = int(x1 * scale_x)
+                    x2 = int(x2 * scale_x)
+                    y1 = int(y1 * scale_y)
+                    y2 = int(y2 * scale_y)
+
+                    center_x = float((x1+x2)/2)
+
+                    tag_detected = True
+                    self.tag_seen = True
+                    self.lost_counter = 0
+
+                    cv2.rectangle(frame,(x1,y1),(x2,y2),(0,255,0),2)
 
             else:
                 self.lost_counter += 1
-        else:
-            self.lost_counter += 1
+
+        # ---------------- smoothing
 
         if tag_detected:
             self.last_center = center_x
+
         elif self.last_center is not None:
             center_x = self.last_center
 
         if center_x is not None and self.prev_center is not None:
-            center_x = 0.7 * self.prev_center + 0.3 * center_x
+            center_x = 0.7*self.prev_center + 0.3*center_x
 
         self.prev_center = center_x
 
-        if self.STATE == "SEARCH_TAG":
+        # ---------------- STATE MACHINE
+
+        if self.STATE == "WAITING":
+
+            action_text = "WAITING"
+
+        elif self.STATE == "SEARCH_TAG":
 
             if tag_detected:
+
                 self.tag_confirm_count += 1
                 self.send_command("STOP")
 
                 if self.tag_confirm_count >= 3:
-                    self.get_logger().info("Tag confirmed — switching to ALIGN_TAG")
-                    self.tag_confirm_count = 0
-                    self.lost_counter = 0
+
+                    self.get_logger().info("Tag confirmed")
+
                     self.STATE = "ALIGN_TAG"
+                    self.tag_confirm_count = 0
+
             else:
-                self.tag_confirm_count = 0
+
                 action_text = "ROTATE_LEFT"
-                self.send_command(action_text)
+                self.send_command("ROTATE_LEFT")
 
         elif self.STATE == "ALIGN_TAG":
 
-            if not tag_detected and self.lost_counter > 8:
-                self.get_logger().warn("Tag lost during align — returning to SEARCH_TAG")
-                action_text = "STOP"
-                self.send_command(action_text)
-                self.tag_confirm_count = 0
-                self.STATE = "SEARCH_TAG"
-
-            elif center_x is not None:
+            if center_x is not None:
 
                 error = center_x - target_x
 
                 if abs(error) < 5:
-                    action_text = "STOP"
-                    self.send_command(action_text)
-                    self.lost_counter = 0
-                    self.get_logger().info("Aligned — switching to APPROACH_TAG")
+
+                    self.send_command("STOP")
+
                     self.STATE = "APPROACH_TAG"
 
                 elif error > 0:
+
                     action_text = "TURN_RIGHT"
-                    self.send_command(action_text)
+                    self.send_command("TURN_RIGHT")
 
                 else:
+
                     action_text = "TURN_LEFT"
-                    self.send_command(action_text)
+                    self.send_command("TURN_LEFT")
 
         elif self.STATE == "APPROACH_TAG":
 
@@ -294,43 +274,74 @@ class EnterBox(Node):
 
                 error = center_x - target_x
 
-                if abs(error) > 20:
-                    self.STATE = "ALIGN_TAG"
+                if abs(error) < 8:
+                    action_text = "FORWARD"
+
+                elif error > 0:
+                    action_text = "FORWARD_RIGHT"
 
                 else:
+                    action_text = "FORWARD_LEFT"
 
-                    if abs(error) < 8:
-                        action_text = "FORWARD"
-                    elif error > 0:
-                        action_text = "FORWARD_RIGHT"
-                    else:
-                        action_text = "FORWARD_LEFT"
-
-                    self.send_command(action_text)
+                self.send_command(action_text)
 
             else:
-                if self.tag_seen and self.lost_counter > 15:
-                    self.get_logger().info("Tag passed — switching to FINAL_FORWARD")
+
+                if self.tag_seen and self.lost_counter > 12:
+
                     self.STATE = "FINAL_FORWARD"
                     self.final_start = time.time()
 
         elif self.STATE == "FINAL_FORWARD":
 
             action_text = "FORWARD"
-            self.send_command(action_text)
+            self.send_command("FORWARD")
 
             if time.time() - self.final_start > self.FINAL_FORWARD_TIME:
+
                 self._completed_final_forward = True
-                self.get_logger().info("Final forward complete — stopping")
                 self.STATE = "STOP"
 
-        cv2.putText(frame, f"ACTION: {action_text}", (30, 70),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
+        elif self.STATE == "STOP":
+
+            self.send_command("STOP")
+
+            if not self._entry_done_sent:
+
+                done_msg = Bool()
+
+                done_msg.data = self._completed_final_forward
+
+                self.entry_done_pub.publish(done_msg)
+
+                self._entry_done_sent = True
+
+        # ---------------- DRAW GRAPHICS
+
+        cv2.putText(frame,f"STATE: {self.STATE}",(20,40),
+                    cv2.FONT_HERSHEY_SIMPLEX,0.8,(0,255,0),2)
+
+        cv2.putText(frame,f"ACTION: {action_text}",(20,80),
+                    cv2.FONT_HERSHEY_SIMPLEX,0.8,(0,255,255),2)
 
         if center_x is not None:
-            cv2.line(frame, (int(center_x), 0), (int(center_x), h), (0, 0, 255), 2)
+            cv2.line(frame,(int(center_x),0),(int(center_x),h),(0,0,255),2)
 
-        cv2.line(frame, (target_x, 0), (target_x, h), (255, 0, 0), 2)
+        cv2.line(frame,(target_x,0),(target_x,h),(255,0,0),2)
+
+        # ---------------- PUBLISH IMAGE
+
+        now = time.time()
+
+        if now - self.last_pub_time > self.PUB_INTERVAL:
+
+            display = cv2.resize(frame,(320,240))
+
+            out_msg = self.bridge.cv2_to_imgmsg(display,encoding='bgr8')
+
+            self.pub.publish(out_msg)
+
+            self.last_pub_time = now
 
 
 def main(args=None):
@@ -342,6 +353,7 @@ def main(args=None):
     rclpy.spin(node)
 
     node.destroy_node()
+
     rclpy.shutdown()
 
 
