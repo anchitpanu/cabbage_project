@@ -1,0 +1,55 @@
+running egg_info
+creating ../build/robot_core/robot_core.egg-info
+writing ../build/robot_core/robot_core.egg-info/PKG-INFO
+writing dependency_links to ../build/robot_core/robot_core.egg-info/dependency_links.txt
+writing entry points to ../build/robot_core/robot_core.egg-info/entry_points.txt
+writing requirements to ../build/robot_core/robot_core.egg-info/requires.txt
+writing top-level names to ../build/robot_core/robot_core.egg-info/top_level.txt
+writing manifest file '../build/robot_core/robot_core.egg-info/SOURCES.txt'
+reading manifest file '../build/robot_core/robot_core.egg-info/SOURCES.txt'
+writing manifest file '../build/robot_core/robot_core.egg-info/SOURCES.txt'
+running build
+running build_py
+creating /home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_core/build
+creating /home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_core/build/lib
+creating /home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_core/build/lib/robot_core
+copying robot_core/detection_node.py -> /home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_core/build/lib/robot_core
+copying robot_core/mission_node.py -> /home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_core/build/lib/robot_core
+copying robot_core/movement_test_node.py -> /home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_core/build/lib/robot_core
+copying robot_core/entry_controller.py -> /home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_core/build/lib/robot_core
+copying robot_core/movement_node.py -> /home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_core/build/lib/robot_core
+copying robot_core/__init__.py -> /home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_core/build/lib/robot_core
+copying robot_core/planting_node.py -> /home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_core/build/lib/robot_core
+running install
+running install_lib
+creating /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/lib/python3.12/site-packages/robot_core
+copying /home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_core/build/lib/robot_core/detection_node.py -> /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/lib/python3.12/site-packages/robot_core
+copying /home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_core/build/lib/robot_core/mission_node.py -> /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/lib/python3.12/site-packages/robot_core
+copying /home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_core/build/lib/robot_core/movement_test_node.py -> /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/lib/python3.12/site-packages/robot_core
+copying /home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_core/build/lib/robot_core/entry_controller.py -> /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/lib/python3.12/site-packages/robot_core
+copying /home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_core/build/lib/robot_core/movement_node.py -> /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/lib/python3.12/site-packages/robot_core
+copying /home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_core/build/lib/robot_core/__init__.py -> /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/lib/python3.12/site-packages/robot_core
+copying /home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_core/build/lib/robot_core/planting_node.py -> /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/lib/python3.12/site-packages/robot_core
+byte-compiling /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/lib/python3.12/site-packages/robot_core/detection_node.py to detection_node.cpython-312.pyc
+byte-compiling /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/lib/python3.12/site-packages/robot_core/mission_node.py to mission_node.cpython-312.pyc
+byte-compiling /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/lib/python3.12/site-packages/robot_core/movement_test_node.py to movement_test_node.cpython-312.pyc
+byte-compiling /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/lib/python3.12/site-packages/robot_core/entry_controller.py to entry_controller.cpython-312.pyc
+byte-compiling /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/lib/python3.12/site-packages/robot_core/movement_node.py to movement_node.cpython-312.pyc
+byte-compiling /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/lib/python3.12/site-packages/robot_core/__init__.py to __init__.cpython-312.pyc
+byte-compiling /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/lib/python3.12/site-packages/robot_core/planting_node.py to planting_node.cpython-312.pyc
+running install_data
+creating /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/share/ament_index
+creating /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/share/ament_index/resource_index
+creating /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/share/ament_index/resource_index/packages
+copying resource/robot_core -> /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/share/ament_index/resource_index/packages
+copying package.xml -> /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/share/robot_core
+running install_egg_info
+Copying ../build/robot_core/robot_core.egg-info to /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/lib/python3.12/site-packages/robot_core-0.0.0-py3.12.egg-info
+running install_scripts
+Installing detection_node script to /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/lib/robot_core
+Installing entry_controller script to /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/lib/robot_core
+Installing mission_node script to /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/lib/robot_core
+Installing movement_node script to /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/lib/robot_core
+Installing movement_test_node script to /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/lib/robot_core
+Installing planting_node script to /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_core/lib/robot_core
+writing list of installed files to '/home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_core/install.log'

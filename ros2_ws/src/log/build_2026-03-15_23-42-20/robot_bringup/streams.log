@@ -1,0 +1,37 @@
+[1.769s] Invoking command in '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_bringup': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com PYTHONPATH=/home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_bringup/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_bringup/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../build/robot_bringup build --build-base /home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_bringup/build install --record /home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_bringup/install.log --single-version-externally-managed install_data
+[1.962s] running egg_info
+[1.962s] creating ../build/robot_bringup/robot_bringup.egg-info
+[1.974s] writing ../build/robot_bringup/robot_bringup.egg-info/PKG-INFO
+[1.975s] writing dependency_links to ../build/robot_bringup/robot_bringup.egg-info/dependency_links.txt
+[1.975s] writing requirements to ../build/robot_bringup/robot_bringup.egg-info/requires.txt
+[1.975s] writing top-level names to ../build/robot_bringup/robot_bringup.egg-info/top_level.txt
+[1.975s] writing manifest file '../build/robot_bringup/robot_bringup.egg-info/SOURCES.txt'
+[2.001s] reading manifest file '../build/robot_bringup/robot_bringup.egg-info/SOURCES.txt'
+[2.001s] writing manifest file '../build/robot_bringup/robot_bringup.egg-info/SOURCES.txt'
+[2.002s] running build
+[2.002s] running build_py
+[2.002s] creating /home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_bringup/build
+[2.002s] creating /home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_bringup/build/lib
+[2.007s] creating /home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_bringup/build/lib/robot_bringup
+[2.008s] copying robot_bringup/__init__.py -> /home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_bringup/build/lib/robot_bringup
+[2.008s] running install
+[2.014s] running install_lib
+[2.030s] creating /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_bringup/lib/python3.12/site-packages/robot_bringup
+[2.030s] copying /home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_bringup/build/lib/robot_bringup/__init__.py -> /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_bringup/lib/python3.12/site-packages/robot_bringup
+[2.030s] byte-compiling /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_bringup/lib/python3.12/site-packages/robot_bringup/__init__.py to __init__.cpython-312.pyc
+[2.031s] running install_data
+[2.031s] creating /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_bringup/share/ament_index
+[2.031s] creating /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_bringup/share/ament_index/resource_index
+[2.031s] creating /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_bringup/share/ament_index/resource_index/packages
+[2.031s] copying resource/robot_bringup -> /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_bringup/share/ament_index/resource_index/packages
+[2.031s] copying package.xml -> /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_bringup/share/robot_bringup
+[2.031s] creating /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_bringup/share/robot_bringup/launch
+[2.031s] copying launch/vision.launch.py -> /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_bringup/share/robot_bringup/launch
+[2.031s] copying launch/micro-ros.launch.py -> /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_bringup/share/robot_bringup/launch
+[2.031s] copying launch/server.launch.py -> /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_bringup/share/robot_bringup/launch
+[2.032s] copying launch/bringup.launch.py -> /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_bringup/share/robot_bringup/launch
+[2.032s] running install_egg_info
+[2.046s] Copying ../build/robot_bringup/robot_bringup.egg-info to /home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_bringup/lib/python3.12/site-packages/robot_bringup-0.0.0-py3.12.egg-info
+[2.046s] running install_scripts
+[2.137s] writing list of installed files to '/home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_bringup/install.log'
+[2.185s] Invoked command in '/home/jorjeen/plant/cabbage_project/ros2_ws/src/robot_bringup' returned '0': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com PYTHONPATH=/home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_bringup/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/jorjeen/plant/cabbage_project/ros2_ws/src/install/robot_bringup/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../build/robot_bringup build --build-base /home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_bringup/build install --record /home/jorjeen/plant/cabbage_project/ros2_ws/src/build/robot_bringup/install.log --single-version-externally-managed install_data

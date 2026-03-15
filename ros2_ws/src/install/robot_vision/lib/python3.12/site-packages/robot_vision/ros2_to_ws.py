@@ -1,0 +1,200 @@
+#!/usr/bin/env python3
+"""
+ros2_to_ws.py  — รันบน PC
+วางไว้ที่: ~/plant/cabbage_project/ros2_ws/ros2_to_ws.py
+
+Subscribe annotated image จาก 2 node แล้วส่งให้ dashboard ผ่าน WebSocket
+
+Topics:
+  /camera1/image_detected  ← enter_box_node  (AprilTag + Enter)
+  /camera2/image_detected  ← cabbage_detector (Cabbage + ขนาด)
+  /quin/detect_result      ← "size_cm"  เช่น "12.4"
+
+WebSocket:
+  ws://localhost:9000  ← dashboard เชื่อมที่นี่
+
+Usage:
+  pip install websockets --break-system-packages
+  python3 ros2_to_ws.py
+"""
+
+import asyncio
+import base64
+import json
+import threading
+import time
+
+import cv2
+import rclpy
+from rclpy.node import Node
+from sensor_msgs.msg import Image
+from std_msgs.msg import String
+from cv_bridge import CvBridge
+import websockets
+
+# ── Config ───────────────────────────────────────────────────────────
+WS_PORT      = 9000
+DASH_FPS     = 8
+JPEG_QUALITY = 60
+# ─────────────────────────────────────────────────────────────────────
+
+
+# ══════════════════════════════════════════════════════════════════════
+# WebSocket server
+# ══════════════════════════════════════════════════════════════════════
+
+_clients: set = set()
+_latest: dict = {}
+_ws_lock = threading.Lock()
+
+
+def _push(cam_id: int, payload: dict):
+    with _ws_lock:
+        _latest[cam_id] = payload
+
+
+async def _ws_handler(websocket):
+    _clients.add(websocket)
+    print(f"[WS] client connected  (total: {len(_clients)})")
+    try:
+        await websocket.wait_closed()
+    finally:
+        _clients.discard(websocket)
+        print(f"[WS] client disconnected (total: {len(_clients)})")
+
+
+async def _broadcast_loop():
+    interval = 1.0 / DASH_FPS
+    while True:
+        t0 = asyncio.get_event_loop().time()
+        if _clients:
+            with _ws_lock:
+                payloads = list(_latest.values())
+            for payload in payloads:
+                msg  = json.dumps(payload)
+                dead = set()
+                for ws in _clients.copy():
+                    try:
+                        await ws.send(msg)
+                    except Exception:
+                        dead.add(ws)
+                _clients -= dead
+        sleep = interval - (asyncio.get_event_loop().time() - t0)
+        await asyncio.sleep(max(sleep, 0.001))
+
+
+def _start_ws():
+    async def _serve():
+        async with websockets.serve(_ws_handler, "0.0.0.0", WS_PORT):
+            print(f"[WS] server ready → ws://0.0.0.0:{WS_PORT}")
+            await _broadcast_loop()
+    asyncio.run(_serve())
+
+
+# ══════════════════════════════════════════════════════════════════════
+# ROS2 Bridge Node
+# ══════════════════════════════════════════════════════════════════════
+
+class DashboardBridge(Node):
+
+    def __init__(self):
+        super().__init__('dashboard_bridge')
+        self.bridge      = CvBridge()
+        self._enc_params = [cv2.IMWRITE_JPEG_QUALITY, JPEG_QUALITY]
+
+        self._min_interval  = 1.0 / DASH_FPS
+        self._last_sent     = {1: 0.0, 2: 0.0}
+
+        # เก็บขนาดกะหล่ำล่าสุด จาก /quin/detect_result
+        self._last_size_cm: float = 0.0
+
+        # ── Subscribers ──────────────────────────────────────────────
+
+        # กล้อง 1 — enter_box_node
+        self.create_subscription(
+            Image,
+            '/camera1/image_detected',
+            lambda msg: self._img_cb(msg, cam_id=1),
+            1)
+
+        # กล้อง 2 — cabbage_detector
+        self.create_subscription(
+            Image,
+            '/camera2/image_detected',
+            lambda msg: self._img_cb(msg, cam_id=2),
+            1)
+
+        # ขนาดกะหล่ำ — format "size_cm" เช่น "12.4"
+        self.create_subscription(
+            String,
+            '/quin/detect_result',
+            self._result_cb,
+            10)
+
+        self.get_logger().info("Dashboard Bridge ready")
+        self.get_logger().info("  /camera1/image_detected → cam_id=1")
+        self.get_logger().info("  /camera2/image_detected → cam_id=2")
+        self.get_logger().info(f"  WebSocket → ws://localhost:{WS_PORT}")
+
+    # ── callbacks ────────────────────────────────────────────────────
+
+    def _result_cb(self, msg: String):
+        """รับขนาดกะหล่ำจาก cabbage_detector"""
+        try:
+            self._last_size_cm = float(msg.data.strip())
+        except ValueError:
+            pass
+
+    def _img_cb(self, msg: Image, cam_id: int):
+        now = time.time()
+        if now - self._last_sent[cam_id] < self._min_interval:
+            return
+        self._last_sent[cam_id] = now
+
+        try:
+            frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+        except Exception as e:
+            self.get_logger().warn(f"[CAM{cam_id}] imgmsg_to_cv2: {e}")
+            return
+
+        _, buf = cv2.imencode('.jpg', frame, self._enc_params)
+
+        payload = {
+            "cam":   cam_id,
+            "label": "CAM1 · AprilTag / Enter" if cam_id == 1 else "CAM2 · Cabbage",
+            "ts":    now,
+            "frame": base64.b64encode(buf).decode(),
+        }
+
+        # กล้อง 2 — แนบขนาดกะหล่ำ
+        if cam_id == 2:
+            size = self._last_size_cm
+            payload["size_cm"]    = size
+            payload["size_label"] = f"{size:.1f} cm" if size > 0 else "ไม่พบกะหล่ำ"
+
+        _push(cam_id, payload)
+
+
+# ══════════════════════════════════════════════════════════════════════
+# Main
+# ══════════════════════════════════════════════════════════════════════
+
+def main():
+    threading.Thread(target=_start_ws, daemon=True).start()
+    time.sleep(0.5)
+
+    rclpy.init()
+    node = DashboardBridge()
+
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+        print("[STOP]")
+
+
+if __name__ == '__main__':
+    main()
