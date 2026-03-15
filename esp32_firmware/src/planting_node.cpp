@@ -47,8 +47,8 @@ constexpr uint8_t PIN_FEEDER  = 19;
 // ═══════════════════════════════════════════════════════════════════
 // STEPPER PARAMETERS
 // ═══════════════════════════════════════════════════════════════════
-constexpr uint32_t STEPS_DOWN    = 4670;   // ระยะลง
-constexpr uint32_t STEPS_UP      = 4520;   // ระยะขึ้น
+constexpr uint32_t STEPS_DOWN    = 4700;   // ระยะลง
+constexpr uint32_t STEPS_UP      = 4600;   // ระยะขึ้น
 constexpr uint32_t STEP_DELAY_US = 700;    // ความเร็ว
 
 // ═══════════════════════════════════════════════════════════════════
