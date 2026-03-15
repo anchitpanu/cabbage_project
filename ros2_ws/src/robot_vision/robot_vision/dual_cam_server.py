@@ -6,10 +6,10 @@ import queue
 
 app = Flask(__name__)
 
-WIDTH = 640
-HEIGHT = 480
+WIDTH = 320
+HEIGHT = 240
 FPS = 10
-JPEG_QUALITY = 25
+JPEG_QUALITY = 15
 
 # =====================
 # CAMERA SERVER CLASS
@@ -62,7 +62,7 @@ class CameraServer:
 # =====================
 
 cam1 = CameraServer(0)
-cam2 = CameraServer(1)
+cam2 = CameraServer(2)
 
 # =====================
 # STREAM GENERATOR

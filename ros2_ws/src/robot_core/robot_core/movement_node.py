@@ -11,7 +11,7 @@ class MovementNode(Node):
         super().__init__('movement_node')
 
         # ---------------- Parameters ----------------
-        self.linear_speed = 0.20
+        self.linear_speed = 0.15
         self.distance_tolerance = 0.005
         self.MAX_TRAVEL_DISTANCE = 1.70
 

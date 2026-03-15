@@ -299,7 +299,7 @@ class MissionNode(Node):
 
         elif step == 4:
             self.mission_step += 1
-            self.send_move(self.C + 0.30)
+            self.send_move(self.C + 0.42)
 
         elif step >= 5:
             if self.cabbage_cumulative_cm < self.CABBAGE_ZONE_MAX_CM:

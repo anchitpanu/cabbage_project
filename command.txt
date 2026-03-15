@@ -19,8 +19,6 @@ ros2 topic pub --once /plant_cmd std_msgs/msg/Bool "{data: true}"
 
 
 
-
-
 web dashboard
 
 @pi 
