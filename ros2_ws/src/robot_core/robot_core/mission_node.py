@@ -142,9 +142,9 @@ class MissionNode(Node):
             f"Parameters loaded → AB={self.AB:.3f} m  C={self.C:.3f} m  DE={self.DE:.3f} m"
         )
 
-        self._start_entry_phase()
+        # self._start_entry_phase()
 
-        # self._trigger_reset()        
+        self._trigger_reset()        
 
     # ==================================================
     # Entry Phase
