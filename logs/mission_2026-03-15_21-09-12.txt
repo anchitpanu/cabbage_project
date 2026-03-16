@@ -1,0 +1,19 @@
+Mission Log — 2026-03-15 21:09:12
+Parameters  — AB=0.300 m  C=0.250 m  DE=0.150 m
+==================================================
+Cabbage  1:    0.0 cm  —  Not detected
+Cabbage  2:    0.0 cm  —  Not detected
+Cabbage  3:    0.0 cm  —  Not detected
+Cabbage  4:   15.3 cm  —  Harvestable
+Cabbage  5:   15.3 cm  —  Harvestable
+Cabbage  6:    0.0 cm  —  Not detected
+Cabbage  7:    0.0 cm  —  Not detected
+Cabbage  8:    0.0 cm  —  Not detected
+Cabbage  9:    0.0 cm  —  Not detected
+Cabbage 10:    0.0 cm  —  Not detected
+Cabbage 11:    0.0 cm  —  Not detected
+==================================================
+Total scanned  : 11
+Harvestable    : 2
+Not ready      : 0
+Not detected   : 9
